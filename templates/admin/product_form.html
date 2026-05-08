@@ -1,0 +1,97 @@
+{% extends "admin/base.html" %}
+{% block page_title %}{{ 'Edit Product' if product else 'Add Product' }}{% endblock %}
+
+{% block content %}
+<div class="page-actions">
+  <div class="page-title">{{ 'Edit: ' + product.name if product else 'Add New Product' }}</div>
+  <a href="{{ url_for('admin_products') }}" class="btn btn-outline">← Back to Products</a>
+</div>
+
+<div class="card">
+  <form method="POST" enctype="multipart/form-data">
+    <div class="form-grid">
+      <!-- Name -->
+      <div class="form-group">
+        <label>Product Name *</label>
+        <input type="text" name="name" required value="{{ product.name if product else '' }}" placeholder="e.g. Gold Crescent Cuff"/>
+      </div>
+
+      <!-- Category -->
+      <div class="form-group">
+        <label>Category *</label>
+        <input type="text" name="category" required value="{{ product.category if product else '' }}" placeholder="e.g. Bracelets, Necklaces, Rings…" list="categories"/>
+        <datalist id="categories">
+          <option value="Necklaces"/>
+          <option value="Rings"/>
+          <option value="Earrings"/>
+          <option value="Bracelets"/>
+          <option value="Anklets"/>
+          <option value="Sets"/>
+          <option value="Bangles"/>
+          <option value="Pendants"/>
+        </datalist>
+      </div>
+
+      <!-- Price -->
+      <div class="form-group">
+        <label>Price (₹) *</label>
+        <input type="number" name="price" required step="0.01" min="0" value="{{ product.price if product else '' }}" placeholder="1299.00"/>
+      </div>
+
+      <!-- Stock -->
+      <div class="form-group">
+        <label>Stock Quantity *</label>
+        <input type="number" name="stock" required min="0" value="{{ product.stock if product else '1' }}" placeholder="1"/>
+      </div>
+
+      <!-- Description -->
+      <div class="form-group form-full">
+        <label>Product Description *</label>
+        <textarea name="description" required rows="5" placeholder="Describe the piece — its materials, inspiration, details, and why it's special…">{{ product.description if product else '' }}</textarea>
+      </div>
+
+      <!-- Images -->
+      <div class="form-group form-full">
+        <label>Product Images</label>
+        <input type="file" name="images" accept="image/*" multiple style="background:var(--white);padding:10px;"/>
+        <p style="font-size:.72rem;color:var(--gray-mid);margin-top:6px;">Upload multiple images. First image will be the primary display image. Max 5MB each.</p>
+        {% if product and product.images %}
+          {% set existing_imgs = product.images.split(',') %}
+          <div style="display:flex;flex-wrap:wrap;gap:8px;margin-top:12px;">
+            {% for img in existing_imgs %}
+            {% if img %}
+            <div style="position:relative;width:80px;height:80px;">
+              <img src="/uploads/{{ img }}" style="width:100%;height:100%;object-fit:cover;border-radius:2px;border:1px solid var(--beige);"/>
+            </div>
+            {% endif %}
+            {% endfor %}
+          </div>
+          <p style="font-size:.7rem;color:var(--gray-mid);margin-top:6px;">New uploads will be added to existing images.</p>
+        {% endif %}
+      </div>
+
+      <!-- Toggles -->
+      <div class="form-group">
+        <label>Special Tags</label>
+        <label class="form-check" style="margin-bottom:12px;">
+          <input type="checkbox" name="only_one" {% if product and product.only_one == 'true' %}checked{% endif %}/>
+          <span>
+            <strong>One of a Kind</strong> — This piece exists only once in the world
+          </span>
+        </label>
+        <label class="form-check">
+          <input type="checkbox" name="featured" {% if product and product.featured == 'true' %}checked{% endif %}/>
+          <span>
+            <strong>Featured on Homepage</strong> — Show in the featured collection
+          </span>
+        </label>
+      </div>
+    </div>
+
+    <div style="margin-top:28px;padding-top:24px;border-top:1px solid var(--beige);display:flex;gap:12px;">
+      <button type="submit" class="btn btn-gold">{{ 'Save Changes' if product else 'Add Product' }}</button>
+      <a href="{{ url_for('admin_products') }}" class="btn btn-outline">Cancel</a>
+    </div>
+  </form>
+</div>
+{% endblock %}

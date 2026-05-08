@@ -1,0 +1,24 @@
+{% extends "base.html" %}
+{% block title %}Order Confirmed — HENOSIS{% endblock %}
+{% block content %}
+<div class="success-page">
+  <div>
+    <div class="success-icon">
+      <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+        <polyline points="20 6 9 17 4 12"/>
+      </svg>
+    </div>
+    <span class="label">Order Confirmed</span>
+    <h1 style="margin-top:16px;">Thank you for your order</h1>
+    <p style="color:var(--gray-mid);margin-top:12px;">Your exclusive piece is reserved for you.</p>
+    <div class="success-order-id">Order #{{ order_id }}</div>
+    <p style="color:var(--gray-mid);font-size:.82rem;max-width:400px;margin:0 auto 40px;line-height:1.8;">
+      Our team will reach out to you shortly with shipping details and payment confirmation. Thank you for choosing Henosis.
+    </p>
+    <div style="display:flex;gap:16px;justify-content:center;flex-wrap:wrap;">
+      <a href="{{ url_for('shop') }}" class="btn btn-gold">Continue Shopping</a>
+      <a href="{{ url_for('index') }}" class="btn btn-outline">Back to Home</a>
+    </div>
+  </div>
+</div>
+{% endblock %}

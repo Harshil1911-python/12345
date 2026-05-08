@@ -1,0 +1,95 @@
+{% extends "base.html" %}
+{% block title %}Our Story — HENOSIS{% endblock %}
+{% block content %}
+
+<div class="about-hero">
+  <div class="reveal">
+    <span class="label" style="color:var(--champagne);display:block;margin-bottom:20px;">Est. 2024</span>
+    <h1 style="color:var(--ivory);font-style:italic;">Our Story</h1>
+    <p style="color:rgba(250,248,244,0.5);margin-top:20px;max-width:480px;font-size:.92rem;line-height:1.8;">
+      Born from a belief that beauty should be accessible — and that every woman deserves to feel singular.
+    </p>
+  </div>
+</div>
+
+<section class="section">
+  <div class="container" style="max-width:900px;">
+    <div class="reveal" style="text-align:center;margin-bottom:80px;">
+      <h2 style="font-style:italic;margin-bottom:28px;">"Henosis"</h2>
+      <p style="font-size:1rem;color:var(--gray-mid);line-height:2;margin-bottom:20px;">
+        From the ancient Greek: a word meaning <em>oneness</em>, <em>unity</em>, <em>the state of being whole</em>. We named our brand after this concept because we believe every piece of jewellery should speak to the wholeness of the person who wears it.
+      </p>
+      <p style="font-size:1rem;color:var(--gray-mid);line-height:2;">
+        Henosis was founded with a singular vision — to create luxury imitation jewellery so exquisite that the world cannot distinguish it from the real thing. Not through deception, but through artistry.
+      </p>
+    </div>
+
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:60px;align-items:center;margin-bottom:80px;" class="reveal">
+      <div>
+        <span class="label" style="display:block;margin-bottom:16px;">The Philosophy</span>
+        <h3 style="margin-bottom:20px;">Rarity as a value</h3>
+        <p style="color:var(--gray-mid);line-height:1.9;font-size:.92rem;">
+          Many of our pieces are crafted only once. A single mold. A single vision. A single owner. When you purchase a "One of a Kind" piece from Henosis, you hold something that will never exist again.
+        </p>
+        <p style="color:var(--gray-mid);line-height:1.9;font-size:.92rem;margin-top:16px;">
+          This is our commitment: to the woman who refuses to blend in. Who understands that true luxury is not about price — it is about exclusivity of spirit.
+        </p>
+      </div>
+      <div style="background:var(--cream);aspect-ratio:4/5;border-radius:2px;display:flex;align-items:center;justify-content:center;">
+        <svg width="60" height="60" viewBox="0 0 24 24" fill="none" stroke="rgba(201,169,110,0.3)" stroke-width="0.5">
+          <polygon points="12,2 15.09,8.26 22,9.27 17,14.14 18.18,21.02 12,17.77 5.82,21.02 7,14.14 2,9.27 8.91,8.26"/>
+        </svg>
+      </div>
+    </div>
+
+    <!-- Values -->
+    <div class="reveal">
+      <div class="section-header">
+        <span class="label">What We Stand For</span>
+        <h2>Our Values</h2>
+        <div class="divider"></div>
+      </div>
+      <div class="values-grid">
+        <div class="value-item">
+          <div class="value-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1">
+              <polygon points="12,2 15.09,8.26 22,9.27 17,14.14 18.18,21.02 12,17.77 5.82,21.02 7,14.14 2,9.27 8.91,8.26"/>
+            </svg>
+          </div>
+          <h4>Exclusivity</h4>
+          <p>Each piece is created with intention. Many exist only once. We believe scarcity is the purest form of luxury.</p>
+        </div>
+        <div class="value-item">
+          <div class="value-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1">
+              <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+            </svg>
+          </div>
+          <h4>Craftsmanship</h4>
+          <p>Every detail is considered. From the setting to the finish, Henosis pieces reflect meticulous attention to artistry.</p>
+        </div>
+        <div class="value-item">
+          <div class="value-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1">
+              <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/>
+            </svg>
+          </div>
+          <h4>Accessibility</h4>
+          <p>Luxury should not require compromise. We make beautiful, high-quality jewellery accessible to every woman.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- CTA -->
+<section style="background:var(--charcoal);padding:80px 40px;text-align:center;">
+  <div class="container reveal">
+    <h2 style="color:var(--ivory);margin-bottom:16px;font-style:italic;">Find your piece</h2>
+    <p style="color:rgba(250,248,244,0.5);font-size:.88rem;margin-bottom:36px;">
+      Browse the collection and discover the piece that was made for you.
+    </p>
+    <a href="{{ url_for('shop') }}" class="btn btn-gold">Explore the Collection</a>
+  </div>
+</section>
+{% endblock %}

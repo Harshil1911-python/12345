@@ -1,0 +1,199 @@
+{% extends "base.html" %}
+{% block title %}HENOSIS — {{ settings.get('tagline', 'Crafted to stand alone.') }}{% endblock %}
+
+{% block content %}
+<!-- ─── Hero ─────────────────────────────────────────────────────────────────── -->
+<section class="hero">
+  <div class="hero-bg"></div>
+  <div class="hero-grain"></div>
+  <div class="hero-accent"></div>
+  <div class="hero-accent-2"></div>
+  <!-- Decorative ring -->
+  <div style="position:absolute;bottom:-80px;left:-80px;width:320px;height:320px;border-radius:50%;border:1px solid rgba(201,169,110,0.06);pointer-events:none;"></div>
+
+  <div class="hero-content">
+    <div class="hero-eyebrow">Luxury Imitation Jewellery · Since 2024</div>
+    <h1 class="hero-title">
+      {{ settings.get('tagline', 'Crafted to<br><em>stand alone.</em>') | replace('stand alone.', '<em>stand alone.</em>') | safe }}
+    </h1>
+    <p class="hero-sub">
+      {{ settings.get('hero_text', 'Where rarity meets artistry. Each piece tells a story that belongs to one soul.') }}
+    </p>
+    <div class="hero-cta">
+      <a href="{{ url_for('shop') }}" class="btn btn-gold">Discover the Collection</a>
+      <a href="{{ url_for('about') }}" class="btn" style="border-color:rgba(250,248,244,0.3);color:rgba(250,248,244,0.8);">Our Story</a>
+    </div>
+  </div>
+
+  <div class="hero-scroll">
+    <div class="hero-scroll-line"></div>
+    <span>Scroll</span>
+  </div>
+</section>
+
+<!-- ─── Featured Marquee ──────────────────────────────────────────────────────── -->
+<div style="background:var(--gold);overflow:hidden;padding:12px 0;">
+  <div style="display:flex;gap:60px;animation:marquee 20s linear infinite;white-space:nowrap;">
+    {% for _ in range(4) %}
+      <span style="font-size:.6rem;letter-spacing:.25em;text-transform:uppercase;color:var(--white);flex-shrink:0;">
+        Exclusively Crafted &nbsp;·&nbsp; One of a Kind &nbsp;·&nbsp; Luxury Imitation &nbsp;·&nbsp; Limited Availability &nbsp;·&nbsp;
+      </span>
+    {% endfor %}
+  </div>
+</div>
+<style>
+@keyframes marquee { from { transform: translateX(0); } to { transform: translateX(-50%); } }
+</style>
+
+<!-- ─── Featured Products ─────────────────────────────────────────────────────── -->
+<section class="section">
+  <div class="container">
+    <div class="section-header reveal">
+      <span class="label">Curated Selection</span>
+      <h2>Featured Pieces</h2>
+      <div class="divider"></div>
+    </div>
+
+    {% if featured %}
+    <div class="product-grid">
+      {% for product in featured %}
+      {% set images = product.images.split(',') if product.images else [] %}
+      <div class="product-card reveal reveal-delay-{{ loop.index }}">
+        <a href="{{ url_for('product_detail', pid=product.id) }}">
+          <div class="product-card-image">
+            {% if images and images[0] %}
+              <img src="{{ url_for('uploaded_file', filename=images[0]) }}" alt="{{ product.name }}" loading="lazy"/>
+            {% else %}
+              <div class="product-placeholder">
+                <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="0.8"><circle cx="12" cy="8" r="4"/><path d="M4 20v-1a8 8 0 0116 0v1"/></svg>
+              </div>
+            {% endif %}
+            {% if product.only_one == 'true' %}
+            <div class="product-card-badge">One of a Kind</div>
+            {% endif %}
+          </div>
+        </a>
+        <div class="product-card-info">
+          <div class="product-card-category">{{ product.category }}</div>
+          <div class="product-card-name">
+            <a href="{{ url_for('product_detail', pid=product.id) }}">{{ product.name }}</a>
+          </div>
+          <div class="product-card-price">₹{{ "{:,.0f}".format(product.price|float) }}</div>
+          {% if product.stock == '0' %}
+            <div class="product-card-stock" style="color:#c9a96e;">Sold</div>
+          {% elif product.only_one == 'true' %}
+            <div class="product-card-stock">Only 1 available</div>
+          {% endif %}
+        </div>
+        <div class="product-card-actions">
+          {% if product.stock != '0' %}
+          <button class="btn btn-dark btn-full"
+            onclick="addToCart('{{ product.id }}','{{ product.name }}','{{ product.price }}','{{ images[0] if images else '' }}','{{ product.only_one }}')">
+            Add to Selection
+          </button>
+          {% else %}
+          <button class="btn btn-full" style="background:rgba(14,14,14,0.6);color:var(--beige);cursor:default;">Sold</button>
+          {% endif %}
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+    {% else %}
+    <div style="text-align:center;padding:60px 0;">
+      <p style="color:var(--gray-mid);font-size:.9rem;margin-bottom:32px;">New pieces arriving soon.</p>
+      <a href="{{ url_for('shop') }}" class="btn btn-outline">View All</a>
+    </div>
+    {% endif %}
+
+    <div class="text-center mt-8 reveal">
+      <a href="{{ url_for('shop') }}" class="btn btn-outline">View Full Collection</a>
+    </div>
+  </div>
+</section>
+
+<!-- ─── Brand Story ───────────────────────────────────────────────────────────── -->
+<section class="story-section">
+  <div class="story-inner">
+    <div class="story-text reveal">
+      <span class="label">The Henosis Story</span>
+      <h2>Where rarity<br><em>meets artistry</em></h2>
+      <p>Henosis — derived from the Greek word for unity and oneness — was born from a belief that jewellery should be more than an accessory. It should be a singular expression of identity.</p>
+      <p>Each piece in our collection is meticulously crafted and, in many cases, exists as the only one of its kind in the world. When you wear Henosis, you wear something that belongs to you alone.</p>
+      <p>We use the finest imitation materials, precision-crafted to mirror the beauty of precious gems and metals — making luxury accessible without compromising on elegance or exclusivity.</p>
+      <div style="margin-top:40px;">
+        <a href="{{ url_for('about') }}" class="btn btn-outline-gold">Read Our Story</a>
+      </div>
+    </div>
+    <div class="story-image reveal reveal-delay-2">
+      <div class="story-image-main">
+        <svg width="80" height="80" viewBox="0 0 24 24" fill="none" stroke="rgba(201,169,110,0.3)" stroke-width="0.5">
+          <polygon points="12,2 15.09,8.26 22,9.27 17,14.14 18.18,21.02 12,17.77 5.82,21.02 7,14.14 2,9.27 8.91,8.26"/>
+        </svg>
+      </div>
+      <div class="story-image-accent"></div>
+      <div class="story-quote">
+        <p>"Crafted for those who believe in the beauty of standing alone."</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ─── Gallery ──────────────────────────────────────────────────────────────── -->
+<section class="section" style="background:var(--cream)">
+  <div class="container">
+    <div class="section-header reveal">
+      <span class="label">The Aesthetic</span>
+      <h2>Captured in Light</h2>
+      <div class="divider"></div>
+    </div>
+    <div class="gallery-grid reveal">
+      {% set gallery_products = products[:6] %}
+      {% for i in range(6) %}
+        {% if i < gallery_products|length %}
+          {% set p = gallery_products[i] %}
+          {% set imgs = p.images.split(',') if p.images else [] %}
+          <div class="gallery-item {% if i == 0 %}tall{% elif i == 3 %}wide{% endif %}">
+            {% if imgs and imgs[0] %}
+              <a href="{{ url_for('product_detail', pid=p.id) }}">
+                <img src="{{ url_for('uploaded_file', filename=imgs[0]) }}" alt="{{ p.name }}" loading="lazy"/>
+              </a>
+            {% else %}
+              <a href="{{ url_for('shop') }}">
+                <div class="gallery-placeholder">
+                  <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="0.8" style="color:var(--beige)">
+                    <rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/>
+                  </svg>
+                </div>
+              </a>
+            {% endif %}
+          </div>
+        {% else %}
+          <div class="gallery-item {% if i == 0 %}tall{% elif i == 3 %}wide{% endif %}">
+            <a href="{{ url_for('shop') }}">
+              <div class="gallery-placeholder">
+                <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="0.8" style="color:var(--beige)">
+                  <rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/>
+                </svg>
+              </div>
+            </a>
+          </div>
+        {% endif %}
+      {% endfor %}
+    </div>
+  </div>
+</section>
+
+<!-- ─── CTA Strip ─────────────────────────────────────────────────────────────── -->
+<section style="background:var(--charcoal);padding:80px 40px;text-align:center;">
+  <div class="container">
+    <div class="reveal">
+      <span class="label" style="color:var(--champagne);">Exclusively Yours</span>
+      <h2 style="color:var(--ivory);margin:20px 0 16px;font-style:italic;">One piece. One owner.<br>One story.</h2>
+      <p style="color:rgba(250,248,244,0.55);font-size:.9rem;max-width:480px;margin:0 auto 40px;line-height:1.9;">
+        Explore our collection of meticulously crafted imitation jewellery — each designed with an intention that the right person will find it.
+      </p>
+      <a href="{{ url_for('shop') }}" class="btn btn-gold">Explore All Pieces</a>
+    </div>
+  </div>
+</section>
+{% endblock %}

@@ -1,0 +1,87 @@
+{% extends "admin/base.html" %}
+{% block page_title %}Orders{% endblock %}
+
+{% block content %}
+<div class="page-actions">
+  <div class="page-title">All Orders ({{ orders|length }})</div>
+  <div style="display:flex;gap:8px;flex-wrap:wrap;">
+    <span class="badge badge-warning" style="padding:6px 12px;">{{ orders|selectattr('status','eq','Pending')|list|length }} Pending</span>
+    <span class="badge badge-gold" style="padding:6px 12px;">{{ orders|selectattr('status','eq','Shipped')|list|length }} Shipped</span>
+    <span class="badge badge-success" style="padding:6px 12px;">{{ orders|selectattr('status','eq','Delivered')|list|length }} Delivered</span>
+  </div>
+</div>
+
+{% if orders %}
+{% for order in orders %}
+<div class="card" style="margin-bottom:20px;">
+  <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:20px;flex-wrap:wrap;">
+    <!-- Left: order info -->
+    <div>
+      <div style="display:flex;align-items:center;gap:16px;margin-bottom:12px;flex-wrap:wrap;">
+        <span style="font-family:'Cormorant Garamond',serif;font-size:1.3rem;color:var(--gold);">#{{ order.id }}</span>
+        {% if order.status == 'Delivered' %}<span class="badge badge-success">{{ order.status }}</span>
+        {% elif order.status == 'Shipped' %}<span class="badge badge-gold">{{ order.status }}</span>
+        {% elif order.status == 'Cancelled' %}<span class="badge badge-danger">{{ order.status }}</span>
+        {% else %}<span class="badge badge-warning">{{ order.status }}</span>{% endif %}
+        {% if order.payment_status == 'Paid' %}<span class="badge badge-success">Paid</span>
+        {% else %}<span class="badge badge-danger">{{ order.payment_status }}</span>{% endif %}
+      </div>
+
+      <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:16px 32px;margin-bottom:16px;">
+        <div>
+          <div style="font-size:.6rem;letter-spacing:.12em;text-transform:uppercase;color:var(--gray-light);margin-bottom:4px;">Customer</div>
+          <div style="font-weight:500;">{{ order.customer_name }}</div>
+          <div style="font-size:.78rem;color:var(--gray-mid);">{{ order.email }}</div>
+          <div style="font-size:.78rem;color:var(--gray-mid);">{{ order.phone }}</div>
+        </div>
+        <div>
+          <div style="font-size:.6rem;letter-spacing:.12em;text-transform:uppercase;color:var(--gray-light);margin-bottom:4px;">Address</div>
+          <div style="font-size:.82rem;line-height:1.6;">{{ order.address }}, {{ order.city }} — {{ order.pincode }}</div>
+        </div>
+        <div>
+          <div style="font-size:.6rem;letter-spacing:.12em;text-transform:uppercase;color:var(--gray-light);margin-bottom:4px;">Items Ordered</div>
+          <div style="font-size:.8rem;line-height:1.6;color:var(--gray-dark);">{{ order.items }}</div>
+        </div>
+        <div>
+          <div style="font-size:.6rem;letter-spacing:.12em;text-transform:uppercase;color:var(--gray-light);margin-bottom:4px;">Order Total</div>
+          <div style="font-family:'Cormorant Garamond',serif;font-size:1.4rem;color:var(--gold);">₹{{ "{:,.0f}".format(order.total|float) }}</div>
+        </div>
+        <div>
+          <div style="font-size:.6rem;letter-spacing:.12em;text-transform:uppercase;color:var(--gray-light);margin-bottom:4px;">Placed On</div>
+          <div style="font-size:.82rem;">{{ order.created_at }}</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Right: update form -->
+    <form method="POST" action="{{ url_for('admin_update_order', oid=order.id) }}" style="display:flex;flex-direction:column;gap:10px;min-width:200px;">
+      <div>
+        <label style="font-size:.6rem;letter-spacing:.12em;text-transform:uppercase;color:var(--gray-mid);display:block;margin-bottom:6px;">Order Status</label>
+        <select name="status" style="width:100%;padding:8px 12px;border:1px solid var(--beige);font-family:'Raleway',sans-serif;font-size:.82rem;background:var(--ivory);border-radius:2px;outline:none;">
+          {% for s in ['Pending','Processing','Shipped','Delivered','Cancelled'] %}
+          <option value="{{ s }}" {% if order.status == s %}selected{% endif %}>{{ s }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div>
+        <label style="font-size:.6rem;letter-spacing:.12em;text-transform:uppercase;color:var(--gray-mid);display:block;margin-bottom:6px;">Payment Status</label>
+        <select name="payment_status" style="width:100%;padding:8px 12px;border:1px solid var(--beige);font-family:'Raleway',sans-serif;font-size:.82rem;background:var(--ivory);border-radius:2px;outline:none;">
+          {% for s in ['Unpaid','Paid','Refunded'] %}
+          <option value="{{ s }}" {% if order.payment_status == s %}selected{% endif %}>{{ s }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <button type="submit" class="btn btn-primary btn-sm" style="margin-top:4px;">Update Order</button>
+    </form>
+  </div>
+</div>
+{% endfor %}
+{% else %}
+<div class="card">
+  <div style="text-align:center;padding:60px;color:var(--gray-mid);">
+    <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="0.8" style="margin:0 auto 16px;color:var(--beige)"><path d="M6 2L3 6v14a2 2 0 002 2h14a2 2 0 002-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 01-8 0"/></svg>
+    <p style="font-style:italic;">No orders have been placed yet.</p>
+  </div>
+</div>
+{% endif %}
+{% endblock %}

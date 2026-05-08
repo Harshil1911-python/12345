@@ -1,0 +1,89 @@
+{% extends "admin/base.html" %}
+{% block page_title %}Site Settings{% endblock %}
+
+{% block content %}
+<div class="page-actions">
+  <div class="page-title">Homepage & Brand Settings</div>
+</div>
+
+<form method="POST" enctype="multipart/form-data">
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:24px;">
+
+    <!-- Brand Identity -->
+    <div class="card">
+      <div class="card-title">Brand Identity</div>
+      <div class="form-group">
+        <label>Logo Text</label>
+        <input type="text" name="logo_text" value="{{ settings.get('logo_text','HENOSIS') }}" placeholder="HENOSIS"/>
+        <p style="font-size:.7rem;color:var(--gray-mid);margin-top:6px;">Shown in header when no logo image is uploaded.</p>
+      </div>
+      <div class="form-group">
+        <label>Logo Image (optional)</label>
+        <input type="file" name="logo_image" accept="image/*" style="background:var(--white);padding:10px;"/>
+        {% if settings.get('logo_image') %}
+          <div style="margin-top:12px;display:flex;align-items:center;gap:12px;">
+            <img src="/uploads/{{ settings.logo_image }}" style="height:40px;width:auto;border:1px solid var(--beige);padding:4px;border-radius:2px;"/>
+            <span style="font-size:.72rem;color:var(--gray-mid);">Current logo</span>
+          </div>
+        {% endif %}
+      </div>
+    </div>
+
+    <!-- Announcement -->
+    <div class="card">
+      <div class="card-title">Announcement Banner</div>
+      <div class="form-group">
+        <label>Banner Text</label>
+        <input type="text" name="banner_text" value="{{ settings.get('banner_text','') }}" placeholder="Free shipping on orders above ₹2000…"/>
+        <p style="font-size:.7rem;color:var(--gray-mid);margin-top:6px;">Displayed at the top of every page.</p>
+      </div>
+    </div>
+
+    <!-- Hero Section -->
+    <div class="card" style="grid-column:1/-1;">
+      <div class="card-title">Homepage Hero Section</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px;">
+        <div class="form-group">
+          <label>Hero Tagline (H1)</label>
+          <input type="text" name="tagline" value="{{ settings.get('tagline','') }}" placeholder="Crafted to stand alone."/>
+          <p style="font-size:.7rem;color:var(--gray-mid);margin-top:6px;">The main headline shown on the hero section.</p>
+        </div>
+        <div class="form-group">
+          <label>Hero Subtext</label>
+          <textarea name="hero_text" rows="3" placeholder="Where rarity meets artistry…">{{ settings.get('hero_text','') }}</textarea>
+          <p style="font-size:.7rem;color:var(--gray-mid);margin-top:6px;">The supporting text beneath the tagline.</p>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- Preview -->
+  <div class="card" style="margin-top:24px;background:var(--charcoal);color:var(--ivory);">
+    <div style="font-size:.62rem;letter-spacing:.2em;text-transform:uppercase;color:var(--champagne);margin-bottom:16px;">Live Preview</div>
+    <div style="text-align:center;padding:40px 20px;">
+      <div style="font-size:.6rem;letter-spacing:.25em;text-transform:uppercase;color:var(--champagne);margin-bottom:12px;">Luxury Imitation Jewellery</div>
+      <div id="previewTagline" style="font-family:'Cormorant Garamond',serif;font-size:2.5rem;font-weight:300;color:var(--ivory);margin-bottom:16px;line-height:1.1;">
+        {{ settings.get('tagline','Crafted to stand alone.') }}
+      </div>
+      <div id="previewSub" style="font-size:.82rem;color:rgba(250,248,244,.55);line-height:1.8;max-width:400px;margin:0 auto;">
+        {{ settings.get('hero_text','') }}
+      </div>
+    </div>
+  </div>
+
+  <div style="margin-top:24px;display:flex;gap:12px;">
+    <button type="submit" class="btn btn-gold">Save All Settings</button>
+    <a href="{{ url_for('index') }}" target="_blank" class="btn btn-outline">Preview Store ↗</a>
+  </div>
+</form>
+
+<script>
+  document.querySelector('[name="tagline"]').addEventListener('input', function() {
+    document.getElementById('previewTagline').textContent = this.value || 'Crafted to stand alone.';
+  });
+  document.querySelector('[name="hero_text"]').addEventListener('input', function() {
+    document.getElementById('previewSub').textContent = this.value;
+  });
+</script>
+{% endblock %}

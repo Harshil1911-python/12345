@@ -1,0 +1,132 @@
+{% extends "base.html" %}
+{% block title %}{{ product.name }} — HENOSIS{% endblock %}
+
+{% block content %}
+{% set images = product.images.split(',') if product.images else [] %}
+
+<section class="section" style="padding-top:60px;">
+  <div class="container">
+    <!-- Breadcrumb -->
+    <nav style="font-size:.65rem;letter-spacing:.12em;text-transform:uppercase;color:var(--gray-light);margin-bottom:48px;">
+      <a href="{{ url_for('index') }}" style="color:inherit;transition:color .2s;" onmouseover="this.style.color='var(--gold)'" onmouseout="this.style.color='var(--gray-light)'">Home</a>
+      <span style="margin:0 12px;">·</span>
+      <a href="{{ url_for('shop') }}" style="color:inherit;transition:color .2s;" onmouseover="this.style.color='var(--gold)'" onmouseout="this.style.color='var(--gray-light)'">Shop</a>
+      <span style="margin:0 12px;">·</span>
+      <span style="color:var(--charcoal);">{{ product.name }}</span>
+    </nav>
+
+    <div class="product-detail-grid">
+      <!-- Images -->
+      <div class="product-images reveal">
+        <div class="product-main-image">
+          {% if images and images[0] %}
+            <img id="mainProductImage" src="{{ url_for('uploaded_file', filename=images[0]) }}" alt="{{ product.name }}" style="width:100%;height:100%;object-fit:cover;"/>
+          {% else %}
+            <div class="product-placeholder" style="width:100%;height:100%;">
+              <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="0.6">
+                <polygon points="12,2 15.09,8.26 22,9.27 17,14.14 18.18,21.02 12,17.77 5.82,21.02 7,14.14 2,9.27 8.91,8.26"/>
+              </svg>
+            </div>
+          {% endif %}
+        </div>
+        {% if images|length > 1 %}
+        <div class="product-thumbs">
+          {% for img in images %}
+          {% if img %}
+          <div class="product-thumb {% if loop.first %}active{% endif %}" data-src="{{ url_for('uploaded_file', filename=img) }}">
+            <img src="{{ url_for('uploaded_file', filename=img) }}" alt="{{ product.name }} {{ loop.index }}"/>
+          </div>
+          {% endif %}
+          {% endfor %}
+        </div>
+        {% endif %}
+      </div>
+
+      <!-- Info -->
+      <div class="product-info reveal reveal-delay-2">
+        <span class="label">{{ product.category }}</span>
+        <h1 style="margin-top:12px;margin-bottom:20px;">{{ product.name }}</h1>
+
+        {% if product.only_one == 'true' %}
+        <div class="product-rarity">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+            <polygon points="12,2 15.09,8.26 22,9.27 17,14.14 18.18,21.02 12,17.77 5.82,21.02 7,14.14 2,9.27 8.91,8.26"/>
+          </svg>
+          One of a Kind — The only piece in existence
+        </div>
+        {% endif %}
+
+        <div class="product-price">₹{{ "{:,.0f}".format(product.price|float) }}</div>
+
+        <p class="product-description">{{ product.description }}</p>
+
+        <div class="product-actions">
+          {% if product.stock != '0' %}
+            <button class="btn btn-gold"
+              onclick="addToCart('{{ product.id }}','{{ product.name | replace("'","\\'") }}','{{ product.price }}','{{ images[0] if images else '' }}','{{ product.only_one }}');showToast('{{ product.name | replace("'","\\'") }} added')">
+              Add to Selection
+            </button>
+            <a href="{{ url_for('checkout') }}" class="btn btn-outline">Buy Now</a>
+          {% else %}
+            <button class="btn btn-dark" disabled style="opacity:.5;cursor:not-allowed;">Sold — Unavailable</button>
+          {% endif %}
+        </div>
+
+        <div class="product-meta">
+          <div class="product-meta-item">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--gold)" stroke-width="1.5" style="flex-shrink:0;margin-top:2px;"><path d="M5 12h14"/><path d="M12 5l7 7-7 7"/></svg>
+            <span><strong>Free shipping</strong> on orders above ₹2000</span>
+          </div>
+          <div class="product-meta-item">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--gold)" stroke-width="1.5" style="flex-shrink:0;margin-top:2px;"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+            <span><strong>Authenticity guaranteed</strong> — Premium imitation craftsmanship</span>
+          </div>
+          {% if product.only_one == 'true' %}
+          <div class="product-meta-item">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--gold)" stroke-width="1.5" style="flex-shrink:0;margin-top:2px;"><polygon points="12,2 15.09,8.26 22,9.27 17,14.14 18.18,21.02 12,17.77 5.82,21.02 7,14.14 2,9.27 8.91,8.26"/></svg>
+            <span><strong>Exclusive rarity</strong> — This piece will never be recreated</span>
+          </div>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+
+    <!-- Related Products -->
+    {% if related %}
+    <div style="margin-top:100px;">
+      <div class="section-header reveal">
+        <span class="label">You May Also Love</span>
+        <h2>Related Pieces</h2>
+        <div class="divider"></div>
+      </div>
+      <div class="product-grid">
+        {% for rp in related %}
+        {% set rimages = rp.images.split(',') if rp.images else [] %}
+        <div class="product-card reveal reveal-delay-{{ loop.index }}">
+          <a href="{{ url_for('product_detail', pid=rp.id) }}">
+            <div class="product-card-image">
+              {% if rimages and rimages[0] %}
+                <img src="{{ url_for('uploaded_file', filename=rimages[0]) }}" alt="{{ rp.name }}" loading="lazy"/>
+              {% else %}
+                <div class="product-placeholder">
+                  <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="0.8">
+                    <polygon points="12,2 15.09,8.26 22,9.27 17,14.14 18.18,21.02 12,17.77 5.82,21.02 7,14.14 2,9.27 8.91,8.26"/>
+                  </svg>
+                </div>
+              {% endif %}
+              {% if rp.only_one == 'true' %}<div class="product-card-badge">One of a Kind</div>{% endif %}
+            </div>
+          </a>
+          <div class="product-card-info">
+            <div class="product-card-category">{{ rp.category }}</div>
+            <div class="product-card-name"><a href="{{ url_for('product_detail', pid=rp.id) }}" style="color:inherit;">{{ rp.name }}</a></div>
+            <div class="product-card-price">₹{{ "{:,.0f}".format(rp.price|float) }}</div>
+          </div>
+        </div>
+        {% endfor %}
+      </div>
+    </div>
+    {% endif %}
+  </div>
+</section>
+{% endblock %}

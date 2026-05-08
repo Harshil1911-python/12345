@@ -1,0 +1,119 @@
+{% extends "admin/base.html" %}
+{% block page_title %}Dashboard{% endblock %}
+
+{% block content %}
+<!-- Stats -->
+<div class="stats-grid">
+  <div class="stat-card accent">
+    <div class="stat-label">Total Revenue</div>
+    <div class="stat-value">₹{{ "{:,.0f}".format(stats.revenue) }}</div>
+    <div class="stat-sub">All time orders</div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-label">Total Orders</div>
+    <div class="stat-value">{{ stats.orders }}</div>
+    <div class="stat-sub">{{ stats.pending }} pending</div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-label">Products</div>
+    <div class="stat-value">{{ stats.products }}</div>
+    <div class="stat-sub">In collection</div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-label">Pending</div>
+    <div class="stat-value">{{ stats.pending }}</div>
+    <div class="stat-sub">Awaiting fulfillment</div>
+  </div>
+</div>
+
+<div style="display:grid;grid-template-columns:2fr 1fr;gap:24px;">
+  <!-- Recent Orders -->
+  <div class="card">
+    <div class="card-title">Recent Orders</div>
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>Order ID</th>
+            <th>Customer</th>
+            <th>Items</th>
+            <th>Total</th>
+            <th>Status</th>
+            <th>Date</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% if recent_orders %}
+            {% for order in recent_orders %}
+            <tr>
+              <td><span style="font-family:'Cormorant Garamond',serif;font-size:1rem;color:var(--gold);">#{{ order.id }}</span></td>
+              <td>
+                <div style="font-weight:500;">{{ order.customer_name }}</div>
+                <div style="font-size:.72rem;color:var(--gray-mid);">{{ order.phone }}</div>
+              </td>
+              <td style="max-width:180px;">
+                <div style="font-size:.75rem;color:var(--gray-mid);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">{{ order.items }}</div>
+              </td>
+              <td style="font-weight:500;color:var(--gold);">₹{{ "{:,.0f}".format(order.total|float) }}</td>
+              <td>
+                {% if order.status == 'Delivered' %}<span class="badge badge-success">{{ order.status }}</span>
+                {% elif order.status == 'Shipped' %}<span class="badge badge-gold">{{ order.status }}</span>
+                {% elif order.status == 'Cancelled' %}<span class="badge badge-danger">{{ order.status }}</span>
+                {% else %}<span class="badge badge-warning">{{ order.status }}</span>{% endif %}
+              </td>
+              <td style="font-size:.75rem;color:var(--gray-mid);">{{ order.created_at[:10] }}</td>
+            </tr>
+            {% endfor %}
+          {% else %}
+          <tr class="empty-row"><td colspan="6">No orders yet</td></tr>
+          {% endif %}
+        </tbody>
+      </table>
+    </div>
+    <div style="margin-top:16px;">
+      <a href="{{ url_for('admin_orders') }}" class="btn btn-outline btn-sm">View All Orders →</a>
+    </div>
+  </div>
+
+  <!-- Quick Actions -->
+  <div>
+    <div class="card" style="margin-bottom:20px;">
+      <div class="card-title">Quick Actions</div>
+      <div style="display:flex;flex-direction:column;gap:10px;">
+        <a href="{{ url_for('admin_add_product') }}" class="btn btn-gold" style="text-align:center;">+ Add New Product</a>
+        <a href="{{ url_for('admin_orders') }}" class="btn btn-outline" style="text-align:center;">Manage Orders</a>
+        <a href="{{ url_for('admin_settings') }}" class="btn btn-outline" style="text-align:center;">Site Settings</a>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">Recent Products</div>
+      {% set recent_prods = products[-5:] | reverse | list %}
+      {% if recent_prods %}
+        {% for p in recent_prods %}
+        {% set imgs = p.images.split(',') if p.images else [] %}
+        <div style="display:flex;align-items:center;gap:12px;padding:10px 0;border-bottom:1px solid var(--beige);">
+          {% if imgs and imgs[0] %}
+            <img src="/uploads/{{ imgs[0] }}" alt="{{ p.name }}" class="product-thumb-mini"/>
+          {% else %}
+            <div class="product-thumb-mini" style="display:flex;align-items:center;justify-content:center;">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1" style="color:var(--beige)"><polygon points="12,2 15.09,8.26 22,9.27 17,14.14 18.18,21.02 12,17.77 5.82,21.02 7,14.14 2,9.27 8.91,8.26"/></svg>
+            </div>
+          {% endif %}
+          <div style="flex:1;min-width:0;">
+            <div style="font-size:.82rem;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">{{ p.name }}</div>
+            <div style="font-size:.72rem;color:var(--gold);">₹{{ "{:,.0f}".format(p.price|float) }}</div>
+          </div>
+          {% if p.only_one == 'true' %}<span class="badge badge-gold" style="flex-shrink:0;">1/1</span>{% endif %}
+        </div>
+        {% endfor %}
+      {% else %}
+        <p style="font-size:.82rem;color:var(--gray-mid);font-style:italic;">No products yet</p>
+      {% endif %}
+      <div style="margin-top:16px;">
+        <a href="{{ url_for('admin_products') }}" class="btn btn-outline btn-sm">All Products →</a>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

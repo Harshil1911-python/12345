@@ -1,0 +1,14 @@
+/* Additional admin styles loaded where needed */
+.image-preview-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 12px;
+}
+.image-preview-grid img {
+  width: 80px;
+  height: 80px;
+  object-fit: cover;
+  border-radius: 2px;
+  border: 1px solid var(--beige);
+}

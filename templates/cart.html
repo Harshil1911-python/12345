@@ -1,0 +1,85 @@
+{% extends "base.html" %}
+{% block title %}Your Selection — HENOSIS{% endblock %}
+
+{% block content %}
+<section class="section" style="padding-top:60px;min-height:70vh;">
+  <div class="container" style="max-width:900px;">
+    <div style="margin-bottom:48px;" class="reveal">
+      <span class="label">Your Selection</span>
+      <h2 style="margin-top:12px;">Shopping Cart</h2>
+    </div>
+
+    <div id="cartPageContent">
+      <!-- Populated by JS -->
+      <div style="text-align:center;padding:60px 0;color:var(--gray-mid);">
+        <div class="cart-empty-icon">
+          <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1">
+            <path d="M6 2L3 6v14a2 2 0 002 2h14a2 2 0 002-2V6l-3-4z"/>
+            <line x1="3" y1="6" x2="21" y2="6"/>
+            <path d="M16 10a4 4 0 01-8 0"/>
+          </svg>
+        </div>
+        <h3 style="font-family:var(--font-display);font-size:1.5rem;margin-bottom:12px;">Your cart is empty</h3>
+        <p style="font-size:.88rem;margin-bottom:32px;">Discover pieces that speak to you.</p>
+        <a href="/shop" class="btn btn-gold">Explore Collection</a>
+      </div>
+    </div>
+  </div>
+</section>
+
+{% block extra_scripts %}
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+  const container = document.getElementById('cartPageContent');
+  if (!container) return;
+  if (cart.length === 0) return; // shows default empty state
+
+  const total = cart.reduce((s,i) => s + i.price * i.qty, 0);
+  container.innerHTML = `
+    <div style="display:grid;grid-template-columns:1fr 380px;gap:60px;align-items:start;">
+      <div>
+        <div style="border-top:1px solid var(--beige);">
+          ${cart.map(item => `
+            <div style="display:flex;gap:20px;padding:24px 0;border-bottom:1px solid var(--beige);align-items:center;">
+              <div style="width:96px;height:96px;border-radius:2px;overflow:hidden;background:var(--cream);flex-shrink:0;display:flex;align-items:center;justify-content:center;">
+                ${item.image ? `<img src="/uploads/${item.image}" style="width:100%;height:100%;object-fit:cover;"/>` : `<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1" style="color:var(--beige)"><polygon points="12,2 15.09,8.26 22,9.27 17,14.14 18.18,21.02 12,17.77 5.82,21.02 7,14.14 2,9.27 8.91,8.26"/></svg>`}
+              </div>
+              <div style="flex:1;">
+                <div style="font-family:var(--font-display);font-size:1.1rem;margin-bottom:6px;">${item.name}</div>
+                <div style="font-size:.75rem;color:var(--gold);font-weight:500;margin-bottom:8px;">₹${(item.price * item.qty).toLocaleString('en-IN')}</div>
+                ${item.onlyOne ? `<span style="font-size:.58rem;letter-spacing:.12em;text-transform:uppercase;color:var(--champagne);">One of a kind</span>` : `
+                <div style="display:flex;align-items:center;gap:10px;">
+                  <button onclick="changeQty('${item.id}',-1);location.reload()" style="width:28px;height:28px;border:1px solid var(--beige);background:none;cursor:pointer;font-size:1rem;display:flex;align-items:center;justify-content:center;">−</button>
+                  <span style="font-size:.88rem;min-width:20px;text-align:center;">${item.qty}</span>
+                  <button onclick="changeQty('${item.id}',1);location.reload()" style="width:28px;height:28px;border:1px solid var(--beige);background:none;cursor:pointer;font-size:1rem;display:flex;align-items:center;justify-content:center;">+</button>
+                </div>`}
+              </div>
+              <button onclick="removeFromCart('${item.id}');location.reload()" style="font-size:.65rem;letter-spacing:.1em;text-transform:uppercase;color:var(--gray-light);transition:color .2s;background:none;border:none;cursor:pointer;" onmouseover="this.style.color='var(--charcoal)'" onmouseout="this.style.color='var(--gray-light)'">Remove</button>
+            </div>
+          `).join('')}
+        </div>
+        <div style="margin-top:24px;">
+          <a href="/shop" style="font-size:.68rem;letter-spacing:.12em;text-transform:uppercase;color:var(--gray-mid);transition:color .2s;" onmouseover="this.style.color='var(--gold)'" onmouseout="this.style.color='var(--gray-mid)'">← Continue Shopping</a>
+        </div>
+      </div>
+      <div style="background:var(--cream);padding:32px;border-radius:2px;position:sticky;top:100px;">
+        <h3 style="font-family:var(--font-display);font-size:1.3rem;margin-bottom:24px;padding-bottom:16px;border-bottom:1px solid var(--beige);">Order Summary</h3>
+        ${cart.map(i=>`
+          <div style="display:flex;justify-content:space-between;font-size:.82rem;padding:8px 0;border-bottom:1px solid var(--beige);">
+            <span>${i.name} <span style="color:var(--gray-light);">×${i.qty}</span></span>
+            <span style="color:var(--gold);">₹${(i.price*i.qty).toLocaleString('en-IN')}</span>
+          </div>`).join('')}
+        <div style="display:flex;justify-content:space-between;align-items:center;padding-top:16px;margin-top:4px;">
+          <span style="font-size:.72rem;letter-spacing:.1em;text-transform:uppercase;">Total</span>
+          <span style="font-family:var(--font-display);font-size:1.5rem;color:var(--gold);">₹${total.toLocaleString('en-IN')}</span>
+        </div>
+        <div style="margin-top:20px;padding-top:16px;border-top:1px solid var(--beige);font-size:.75rem;color:var(--gray-mid);margin-bottom:20px;">
+          Shipping calculated at checkout. Free on orders above ₹2000.
+        </div>
+        <a href="/checkout" class="btn btn-gold btn-full">Proceed to Checkout</a>
+      </div>
+    </div>`;
+});
+</script>
+{% endblock %}
+{% endblock %}

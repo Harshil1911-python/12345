@@ -1,0 +1,95 @@
+{% extends "base.html" %}
+{% block title %}Shop — HENOSIS{% endblock %}
+
+{% block content %}
+<!-- Shop Header -->
+<div class="shop-header">
+  <span class="label" style="color:var(--champagne);display:block;margin-bottom:16px;">The Collection</span>
+  <h1 style="color:var(--ivory);">All Pieces</h1>
+  <p style="color:rgba(250,248,244,0.5);font-size:.88rem;margin-top:16px;font-style:italic;">
+    Curated. Exclusive. Yours alone.
+  </p>
+</div>
+
+<!-- Filter Bar -->
+<div class="filter-bar">
+  <a href="{{ url_for('shop') }}" class="filter-btn {% if not selected_category %}active{% endif %}">All</a>
+  {% for cat in categories %}
+  <a href="{{ url_for('shop', category=cat) }}" class="filter-btn {% if selected_category == cat %}active{% endif %}">{{ cat }}</a>
+  {% endfor %}
+</div>
+
+<!-- Products -->
+<section class="section">
+  <div class="container">
+    {% if products %}
+    <div style="margin-bottom:24px;">
+      <p style="font-size:.75rem;color:var(--gray-light);letter-spacing:.08em;">
+        {{ products|length }} piece{{ 's' if products|length != 1 else '' }} available
+      </p>
+    </div>
+    <div class="product-grid">
+      {% for product in products %}
+      {% set images = product.images.split(',') if product.images else [] %}
+      <div class="product-card reveal reveal-delay-{{ (loop.index0 % 4) + 1 }}">
+        <a href="{{ url_for('product_detail', pid=product.id) }}">
+          <div class="product-card-image">
+            {% if images and images[0] %}
+              <img src="{{ url_for('uploaded_file', filename=images[0]) }}" alt="{{ product.name }}" loading="lazy"/>
+            {% else %}
+              <div class="product-placeholder">
+                <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="0.8">
+                  <polygon points="12,2 15.09,8.26 22,9.27 17,14.14 18.18,21.02 12,17.77 5.82,21.02 7,14.14 2,9.27 8.91,8.26"/>
+                </svg>
+              </div>
+            {% endif %}
+            {% if product.only_one == 'true' %}
+            <div class="product-card-badge">One of a Kind</div>
+            {% endif %}
+            {% if product.stock == '0' %}
+            <div style="position:absolute;inset:0;background:rgba(250,248,244,0.7);display:flex;align-items:center;justify-content:center;">
+              <span style="font-size:.65rem;letter-spacing:.2em;text-transform:uppercase;color:var(--gray-mid);">Sold</span>
+            </div>
+            {% endif %}
+          </div>
+        </a>
+        <div class="product-card-info">
+          <div class="product-card-category">{{ product.category }}</div>
+          <div class="product-card-name">
+            <a href="{{ url_for('product_detail', pid=product.id) }}" style="color:inherit;">{{ product.name }}</a>
+          </div>
+          <div class="product-card-price">₹{{ "{:,.0f}".format(product.price|float) }}</div>
+          {% if product.stock == '0' %}
+            <div class="product-card-stock" style="color:var(--champagne);">Sold · Unavailable</div>
+          {% elif product.only_one == 'true' %}
+            <div class="product-card-stock">Only 1 in the world</div>
+          {% else %}
+            <div class="product-card-stock">{{ product.stock }} available</div>
+          {% endif %}
+        </div>
+        <div class="product-card-actions">
+          {% if product.stock != '0' %}
+          <button class="btn btn-dark btn-full"
+            onclick="addToCart('{{ product.id }}','{{ product.name | replace("'","\\'"  ) }}','{{ product.price }}','{{ images[0] if images else '' }}','{{ product.only_one }}')">
+            Add to Selection
+          </button>
+          {% else %}
+          <button class="btn btn-full" style="background:rgba(14,14,14,0.6);color:var(--beige);cursor:not-allowed;">Unavailable</button>
+          {% endif %}
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+    {% else %}
+    <div class="empty-state">
+      <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="0.8" style="margin:0 auto 24px;color:var(--beige)">
+        <polygon points="12,2 15.09,8.26 22,9.27 17,14.14 18.18,21.02 12,17.77 5.82,21.02 7,14.14 2,9.27 8.91,8.26"/>
+      </svg>
+      <h3>No pieces found</h3>
+      <p>New collections are being crafted. Check back soon.</p>
+      <a href="{{ url_for('shop') }}" class="btn btn-outline">View All</a>
+    </div>
+    {% endif %}
+  </div>
+</section>
+{% endblock %}
