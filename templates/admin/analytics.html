@@ -1,0 +1,140 @@
+{% extends "admin/base.html" %}
+{% block page_title %}Analytics{% endblock %}
+{% block content %}
+
+<div class="stats-grid">
+  <div class="stat-card accent">
+    <div class="stat-label">Total Revenue</div>
+    <div class="stat-value">₹{{ "{:,.0f}".format(stats.total_revenue) }}</div>
+    <div class="stat-sub">All-time</div>
+  </div>
+  <div class="stat-card gold">
+    <div class="stat-label">Paid Revenue</div>
+    <div class="stat-value">₹{{ "{:,.0f}".format(stats.paid_revenue) }}</div>
+    <div class="stat-sub">Confirmed payments</div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-label">Avg Order Value</div>
+    <div class="stat-value">₹{{ "{:,.0f}".format(stats.avg_order) }}</div>
+    <div class="stat-sub">Per order</div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-label">Total Orders</div>
+    <div class="stat-value">{{ stats.total_orders }}</div>
+    <div class="stat-sub">All time</div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-label">Customers</div>
+    <div class="stat-value">{{ stats.total_customers }}</div>
+    <div class="stat-sub">Registered</div>
+  </div>
+  <div class="stat-card {% if stats.out_of_stock > 0 %}gold{% endif %}">
+    <div class="stat-label">Out of Stock</div>
+    <div class="stat-value">{{ stats.out_of_stock }}</div>
+    <div class="stat-sub">Products sold out</div>
+  </div>
+</div>
+
+<div style="display:grid;grid-template-columns:2fr 1fr;gap:20px;margin-bottom:20px;">
+
+  <!-- Monthly Revenue Chart -->
+  <div class="card">
+    <div class="card-title">Monthly Revenue</div>
+    {% if monthly_revenue %}
+    {% set max_rev = monthly_revenue|map(attribute=1)|max %}
+    <div style="display:flex;align-items:flex-end;gap:6px;height:140px;padding-top:8px;">
+      {% for month,amt in monthly_revenue %}
+      <div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:4px;min-width:0;">
+        <div style="font-size:.58rem;color:var(--gold);font-weight:500;">₹{{ (amt/1000)|round(1) }}k</div>
+        <div style="width:100%;background:linear-gradient(to top,var(--gold),var(--champagne));border-radius:2px 2px 0 0;
+          height:{{ ((amt/max_rev)*100)|int if max_rev > 0 else 2 }}px;min-height:4px;opacity:.85;"></div>
+        <span style="font-size:.55rem;color:var(--gray-light);white-space:nowrap;overflow:hidden;max-width:100%;text-overflow:ellipsis;">{{ month }}</span>
+      </div>
+      {% endfor %}
+    </div>
+    {% else %}
+    <p style="color:var(--gray-light);font-size:.82rem;font-style:italic;padding:20px 0;">No order data yet.</p>
+    {% endif %}
+  </div>
+
+  <!-- Order Status Breakdown -->
+  <div class="card">
+    <div class="card-title">Orders by Status</div>
+    {% for status, count in status_counts.items() %}
+    {% set total_orders = status_counts.values()|sum %}
+    {% set pct = ((count / total_orders) * 100)|int if total_orders > 0 else 0 %}
+    <div style="margin-bottom:14px;">
+      <div style="display:flex;justify-content:space-between;margin-bottom:5px;">
+        <span style="font-size:.72rem;font-weight:500;">{{ status }}</span>
+        <span style="font-size:.72rem;color:var(--gold);">{{ count }} ({{ pct }}%)</span>
+      </div>
+      <div style="background:var(--beige);border-radius:2px;height:6px;">
+        <div style="background:{% if status=='Delivered' %}#2d7a2d{% elif status=='Shipped' %}var(--gold){% elif status=='Cancelled' %}#c44{% else %}#856404{% endif %};
+          width:{{ pct }}%;height:100%;border-radius:2px;transition:width .6s;"></div>
+      </div>
+    </div>
+    {% else %}
+    <p style="color:var(--gray-light);font-size:.82rem;font-style:italic;">No data yet.</p>
+    {% endfor %}
+  </div>
+</div>
+
+<div style="display:grid;grid-template-columns:1fr 1fr;gap:20px;">
+
+  <!-- Category Sales -->
+  <div class="card">
+    <div class="card-title">Sales by Category</div>
+    {% if category_sales %}
+    {% set max_cat = category_sales.values()|max %}
+    {% for cat, count in category_sales.items()|sort(attribute=1, reverse=True) %}
+    <div style="display:flex;align-items:center;gap:10px;margin-bottom:12px;">
+      <div style="width:100px;font-size:.72rem;font-weight:500;flex-shrink:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">{{ cat }}</div>
+      <div style="flex:1;background:var(--beige);border-radius:2px;height:8px;">
+        <div style="background:var(--gold);width:{{ ((count/max_cat)*100)|int }}%;height:100%;border-radius:2px;"></div>
+      </div>
+      <span style="font-size:.7rem;color:var(--gray-mid);flex-shrink:0;">{{ count }}</span>
+    </div>
+    {% endfor %}
+    {% else %}
+    <p style="color:var(--gray-light);font-size:.82rem;font-style:italic;">No sales data yet.</p>
+    {% endif %}
+  </div>
+
+  <!-- Top Customers -->
+  <div class="card">
+    <div class="card-title">Top Customers by Spend</div>
+    {% if top_customers %}
+    <table>
+      <thead><tr><th>#</th><th>Customer</th><th>Orders</th><th>Spent</th></tr></thead>
+      <tbody>
+        {% for c in top_customers %}
+        <tr>
+          <td style="font-family:var(--font-display);color:var(--gold);font-size:1rem;">{{ loop.index }}</td>
+          <td>
+            <div style="font-weight:500;font-size:.82rem;">{{ c.name }}</div>
+            <div style="font-size:.68rem;color:var(--gray-mid);">{{ c.email }}</div>
+          </td>
+          <td><span class="badge badge-gold">{{ c.total_orders }}</span></td>
+          <td style="font-weight:500;color:var(--gold);">₹{{ "{:,.0f}".format(c.total_spent|float) }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+    {% else %}
+    <p style="color:var(--gray-light);font-size:.82rem;font-style:italic;">No customer data yet.</p>
+    {% endif %}
+  </div>
+</div>
+
+<!-- Export buttons -->
+<div style="margin-top:20px;display:flex;gap:10px;">
+  <a href="{{ url_for('admin_export_orders') }}" class="btn btn-outline">
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+    Export Orders CSV
+  </a>
+  <a href="{{ url_for('admin_export_customers') }}" class="btn btn-outline">
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+    Export Customers CSV
+  </a>
+</div>
+{% endblock %}

@@ -3,127 +3,203 @@
 <head>
   <meta charset="UTF-8"/>
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>{% block title %}HENOSIS — Crafted to stand alone{% endblock %}</title>
+  <title>{% block title %}{{ settings.get('meta_title','HENOSIS — Crafted to stand alone.') }}{% endblock %}</title>
+  <meta name="description" content="{{ settings.get('meta_description','Luxury imitation jewellery. Exclusively crafted. One of a kind.') }}"/>
+  <meta property="og:title" content="{{ settings.get('meta_title','HENOSIS') }}"/>
+  <meta property="og:description" content="{{ settings.get('meta_description','') }}"/>
   <link rel="preconnect" href="https://fonts.googleapis.com"/>
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
   <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;0,600;1,300;1,400&family=Raleway:wght@300;400;500;600&display=swap" rel="stylesheet"/>
   <link rel="stylesheet" href="{{ url_for('static', filename='css/main.css') }}"/>
+  <!-- Dynamic brand colors injected from admin settings -->
+  <style>
+    :root {
+      --gold: {{ settings.get('primary_color','#b8965a') }};
+      --champagne: {{ settings.get('accent_color','#c9a96e') }};
+      --gold-light: {{ settings.get('accent_color','#c9a96e') }};
+    }
+  </style>
+  {% if settings.get('google_analytics') %}
+  <script async src="https://www.googletagmanager.com/gtag/js?id={{ settings.google_analytics }}"></script>
+  <script>window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag('js',new Date());gtag('config','{{ settings.google_analytics }}');</script>
+  {% endif %}
   {% block extra_head %}{% endblock %}
 </head>
 <body>
-  <!-- Page Loader -->
-  <div class="page-loader" id="pageLoader">
-    <div class="loader-logo">HENOSIS</div>
-  </div>
-  <!-- Scroll Progress -->
-  <div class="scroll-progress" id="scrollProgress"></div>
 
-  <!-- Announcement Banner -->
-  <div class="banner" id="banner">
-    <span>{{ settings.get('banner_text', 'Free shipping on orders above ₹2000 · Exclusively crafted · One of a kind') }}</span>
-    <button class="banner-close" onclick="document.getElementById('banner').style.display='none'">×</button>
-  </div>
+<!-- Page Loader -->
+<div class="page-loader" id="pageLoader"><div class="loader-logo">{{ settings.get('logo_text','HENOSIS') }}</div></div>
+<!-- Scroll Progress -->
+<div class="scroll-progress" id="scrollProgress"></div>
 
-  <!-- Navigation -->
-  <nav class="nav" id="nav">
-    <div class="nav-inner">
-      <a href="{{ url_for('shop') }}" class="nav-link">Shop</a>
-      <a href="{{ url_for('about') }}" class="nav-link">Our Story</a>
-      <a href="{{ url_for('index') }}" class="nav-logo">
-        {% if settings.get('logo_image') %}
-          <img src="{{ url_for('uploaded_file', filename=settings['logo_image']) }}" alt="Henosis" class="logo-img"/>
-        {% else %}
-          {{ settings.get('logo_text', 'HENOSIS') }}
+<!-- Announcement Banner -->
+{% if settings.get('banner_active','true') == 'true' %}
+<div class="banner" id="banner">
+  <span>{{ settings.get('banner_text','Free shipping on orders above ₹2000 · Exclusively crafted · One of a kind') }}</span>
+  <button class="banner-close" onclick="document.getElementById('banner').style.display='none'">×</button>
+</div>
+{% endif %}
+
+<!-- Navigation -->
+<nav class="nav" id="nav">
+  <div class="nav-inner">
+    <a href="{{ url_for('shop') }}" class="nav-link">Shop</a>
+    <a href="{{ url_for('about') }}" class="nav-link">Our Story</a>
+    <a href="{{ url_for('index') }}" class="nav-logo">
+      {% if settings.get('logo_image') %}
+        <img src="{{ url_for('uploaded_file', filename=settings['logo_image']) }}" alt="{{ settings.get('logo_text','HENOSIS') }}" class="logo-img"/>
+      {% else %}
+        {{ settings.get('logo_text','HENOSIS') }}
+      {% endif %}
+    </a>
+    {% if settings.get('contact_phone') or settings.get('whatsapp_number') %}
+    <a href="{% if settings.get('whatsapp_number') %}https://wa.me/{{ settings.whatsapp_number }}{% else %}tel:{{ settings.contact_phone }}{% endif %}"
+       class="nav-link" target="_blank">Contact</a>
+    {% else %}
+    <a href="{{ url_for('about') }}" class="nav-link">Contact</a>
+    {% endif %}
+    <button class="nav-cart-btn" onclick="toggleCart()">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M6 2L3 6v14a2 2 0 002 2h14a2 2 0 002-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 01-8 0"/></svg>
+      <span class="cart-count" id="cartCount">0</span>
+    </button>
+  </div>
+</nav>
+
+<!-- Cart Drawer -->
+<div class="cart-overlay" id="cartOverlay" onclick="toggleCart()"></div>
+<aside class="cart-drawer" id="cartDrawer">
+  <div class="cart-header">
+    <h3>Your Selection</h3>
+    <button onclick="toggleCart()" class="cart-close">×</button>
+  </div>
+  <div class="cart-items" id="cartItems"></div>
+  <div class="cart-footer">
+    <div class="cart-total"><span>Total</span><span id="cartTotal">₹0</span></div>
+    <a href="{{ url_for('checkout') }}" class="btn btn-dark btn-full" style="text-align:center;display:block;">Proceed to Checkout</a>
+  </div>
+</aside>
+
+<!-- Main -->
+<main>{% block content %}{% endblock %}</main>
+
+<!-- Footer -->
+<footer class="footer">
+  <div class="footer-inner">
+    <div class="footer-brand">
+      <div class="footer-logo" id="footerLogo">{{ settings.get('logo_text','HENOSIS') }}</div>
+      <p class="footer-tagline">{{ settings.get('tagline','Crafted to stand alone.') }}</p>
+      {% if settings.get('instagram_url') or settings.get('pinterest_url') %}
+      <div style="display:flex;gap:16px;margin-top:20px;">
+        {% if settings.get('instagram_url') %}
+        <a href="{{ settings.instagram_url }}" target="_blank" style="color:rgba(250,248,244,.4);transition:color .2s;" onmouseover="this.style.color='var(--champagne)'" onmouseout="this.style.color='rgba(250,248,244,.4)'">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="2" y="2" width="20" height="20" rx="5"/><path d="M16 11.37A4 4 0 1112.63 8 4 4 0 0116 11.37z"/><line x1="17.5" y1="6.5" x2="17.51" y2="6.5"/></svg>
+        </a>
         {% endif %}
-      </a>
-      <a href="#" class="nav-link">Journal</a>
-      <button class="nav-cart-btn" onclick="toggleCart()">
-        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M6 2L3 6v14a2 2 0 002 2h14a2 2 0 002-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 01-8 0"/></svg>
-        <span class="cart-count" id="cartCount">0</span>
-      </button>
-    </div>
-  </nav>
-
-  <!-- Cart Drawer -->
-  <div class="cart-overlay" id="cartOverlay" onclick="toggleCart()"></div>
-  <aside class="cart-drawer" id="cartDrawer">
-    <div class="cart-header">
-      <h3>Your Selection</h3>
-      <button onclick="toggleCart()" class="cart-close">×</button>
-    </div>
-    <div class="cart-items" id="cartItems"></div>
-    <div class="cart-footer">
-      <div class="cart-total">
-        <span>Total</span>
-        <span id="cartTotal">₹0</span>
+        {% if settings.get('pinterest_url') %}
+        <a href="{{ settings.pinterest_url }}" target="_blank" style="color:rgba(250,248,244,.4);transition:color .2s;" onmouseover="this.style.color='var(--champagne)'" onmouseout="this.style.color='rgba(250,248,244,.4)'">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M12 2C6.48 2 2 6.48 2 12c0 4.24 2.65 7.86 6.39 9.29-.09-.78-.17-1.98.04-2.83.18-.77 1.22-5.17 1.22-5.17s-.31-.62-.31-1.54c0-1.45.84-2.53 1.88-2.53.89 0 1.32.67 1.32 1.47 0 .9-.57 2.24-.87 3.49-.25 1.04.52 1.89 1.54 1.89 1.85 0 3.1-2.37 3.1-5.18 0-2.15-1.46-3.66-3.54-3.66-2.41 0-3.83 1.81-3.83 3.68 0 .73.28 1.51.63 1.94.07.08.08.15.06.24l-.24.95c-.04.14-.12.18-.28.11-1.04-.49-1.69-2.02-1.69-3.25 0-2.64 1.92-5.07 5.53-5.07 2.9 0 5.16 2.07 5.16 4.83 0 2.88-1.81 5.19-4.32 5.19-.84 0-1.64-.44-1.91-.96l-.52 1.96c-.19.72-.69 1.62-1.03 2.17.78.24 1.6.37 2.45.37 5.52 0 10-4.48 10-10S17.52 2 12 2z"/></svg>
+        </a>
+        {% endif %}
       </div>
-      <a href="{{ url_for('checkout') }}" class="btn btn-dark btn-full">Proceed to Checkout</a>
+      {% endif %}
     </div>
-  </aside>
-
-  <!-- Main Content -->
-  <main>{% block content %}{% endblock %}</main>
-
-  <!-- Footer -->
-  <footer class="footer">
-    <div class="footer-inner">
-      <div class="footer-brand">
-        <div class="footer-logo">{{ settings.get('logo_text', 'HENOSIS') }}</div>
-        <p class="footer-tagline">{{ settings.get('tagline', 'Crafted to stand alone.') }}</p>
+    <div class="footer-links">
+      <div>
+        <h5>Explore</h5>
+        <a href="{{ url_for('shop') }}">All Pieces</a>
+        <a href="{{ url_for('about') }}">Our Story</a>
+        {% set cats_all = [] %}
       </div>
-      <div class="footer-links">
-        <div>
-          <h5>Explore</h5>
-          <a href="{{ url_for('shop') }}">All Pieces</a>
-          <a href="{{ url_for('about') }}">Our Story</a>
-        </div>
-        <div>
-          <h5>Support</h5>
-          <a href="#">Shipping Policy</a>
-          <a href="#">Returns</a>
-          <a href="#">Contact</a>
-        </div>
-        <div>
-          <h5>Connect</h5>
-          <a href="#">Instagram</a>
-          <a href="#">Pinterest</a>
-        </div>
+      <div>
+        <h5>Support</h5>
+        <a href="#">Shipping Policy</a>
+        <a href="#">Returns</a>
+        <a href="{% if settings.get('whatsapp_number') %}https://wa.me/{{ settings.whatsapp_number }}{% else %}mailto:{{ settings.get('contact_email','') }}{% endif %}">Contact Us</a>
+      </div>
+      <div>
+        <h5>Connect</h5>
+        {% if settings.get('instagram_url') %}<a href="{{ settings.instagram_url }}" target="_blank">Instagram</a>{% endif %}
+        {% if settings.get('pinterest_url') %}<a href="{{ settings.pinterest_url }}" target="_blank">Pinterest</a>{% endif %}
+        {% if settings.get('contact_email') %}<a href="mailto:{{ settings.contact_email }}">Email Us</a>{% endif %}
       </div>
     </div>
-    <div class="footer-bottom">
-      <p>© 2024 Henosis. All rights reserved. Crafted with intention.</p>
-    </div>
-  </footer>
-
-  <script src="{{ url_for('static', filename='js/main.js') }}"></script>
-  {% block extra_scripts %}{% endblock %}
-
-  <!-- Secret Admin Trigger: click footer logo 5 times quickly -->
-  <div id="adminHint" style="position:fixed;bottom:24px;right:24px;background:#1a1a1a;color:#c9a96e;
-    font-family:'Raleway',sans-serif;font-size:.65rem;letter-spacing:.12em;text-transform:uppercase;
-    padding:10px 18px;opacity:0;pointer-events:none;transition:opacity .4s;z-index:9999;">
-    Opening admin panel…
   </div>
-  <script>
-  (function(){
-    var clicks=0, timer;
-    document.addEventListener('DOMContentLoaded', function(){
-      var logo = document.querySelector('.footer-logo');
-      if(!logo) return;
-      logo.addEventListener('click', function(){
-        clicks++;
-        clearTimeout(timer);
-        timer = setTimeout(function(){ clicks=0; }, 800);
-        if(clicks >= 5){
-          clicks=0;
-          var hint = document.getElementById('adminHint');
-          hint.style.opacity='1';
-          setTimeout(function(){ window.location.href='/henosis-admin'; }, 700);
-        }
-      });
-    });
-  })();
-  </script>
+  <div class="footer-bottom">
+    <p>© {{ 2024 }} {{ settings.get('logo_text','HENOSIS') }}. All rights reserved. {{ settings.get('footer_text','Crafted with intention.') }}</p>
+  </div>
+</footer>
 
+<!-- WhatsApp Chat Button -->
+{% if settings.get('whatsapp_chat')=='true' and settings.get('whatsapp_number') %}
+<a href="https://wa.me/{{ settings.whatsapp_number }}" target="_blank"
+   style="position:fixed;bottom:28px;right:28px;width:54px;height:54px;background:#25d366;border-radius:50%;
+   display:flex;align-items:center;justify-content:center;box-shadow:0 4px 20px rgba(37,211,102,.4);
+   z-index:500;transition:transform .25s,box-shadow .25s;" title="Chat on WhatsApp"
+   onmouseover="this.style.transform='scale(1.1)';this.style.boxShadow='0 6px 28px rgba(37,211,102,.6)'"
+   onmouseout="this.style.transform='scale(1)';this.style.boxShadow='0 4px 20px rgba(37,211,102,.4)'">
+  <svg width="28" height="28" viewBox="0 0 24 24" fill="white">
+    <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/>
+  </svg>
+</a>
+{% endif %}
+
+<!-- Welcome Popup -->
+{% if settings.get('popup_enabled')=='true' %}
+<div id="welcomePopup" style="position:fixed;inset:0;background:rgba(14,14,14,.6);z-index:9990;
+  display:flex;align-items:center;justify-content:center;padding:24px;opacity:0;transition:opacity .5s;">
+  <div style="background:var(--ivory);max-width:440px;width:100%;padding:48px 40px;text-align:center;position:relative;
+    transform:translateY(20px);transition:transform .5s;">
+    <button onclick="closePopup()" style="position:absolute;top:16px;right:20px;font-size:1.4rem;color:var(--gray-light);background:none;border:none;cursor:pointer;">×</button>
+    <div style="font-size:.6rem;letter-spacing:.25em;text-transform:uppercase;color:var(--champagne);margin-bottom:16px;">Welcome</div>
+    <h2 style="font-family:'Cormorant Garamond',serif;font-size:1.8rem;margin-bottom:16px;">{{ settings.get('popup_title','Welcome to Henosis') }}</h2>
+    <p style="color:var(--gray-mid);font-size:.88rem;line-height:1.8;margin-bottom:28px;">{{ settings.get('popup_text','Discover pieces crafted to stand alone.') }}</p>
+    <a href="{{ url_for('shop') }}" onclick="closePopup()" class="btn btn-gold">{{ settings.get('popup_cta','Shop Now') }}</a>
+  </div>
+</div>
+<script>
+function closePopup(){
+  const p=document.getElementById('welcomePopup');
+  p.style.opacity='0'; setTimeout(()=>p.style.display='none',500);
+  localStorage.setItem('henosis_popup_seen','1');
+}
+document.addEventListener('DOMContentLoaded',function(){
+  if(!localStorage.getItem('henosis_popup_seen')){
+    setTimeout(()=>{
+      const p=document.getElementById('welcomePopup');
+      p.style.display='flex';
+      requestAnimationFrame(()=>{ p.style.opacity='1'; p.querySelector('div').style.transform='translateY(0)'; });
+    },2500);
+  }
+});
+</script>
+{% endif %}
+
+<!-- Secret Admin Trigger: click footer logo 5× -->
+<div id="adminHint" style="position:fixed;bottom:24px;right:{% if settings.get('whatsapp_chat')=='true' and settings.get('whatsapp_number') %}100px{% else %}24px{% endif %};
+  background:var(--charcoal);color:var(--champagne);font-family:'Raleway',sans-serif;font-size:.65rem;
+  letter-spacing:.12em;text-transform:uppercase;padding:10px 18px;opacity:0;pointer-events:none;
+  transition:opacity .4s;z-index:9999;">Opening admin panel…</div>
+<script>
+(function(){
+  var clicks=0,timer;
+  document.addEventListener('DOMContentLoaded',function(){
+    var logo=document.getElementById('footerLogo');
+    if(!logo)return;
+    logo.addEventListener('click',function(){
+      clicks++; clearTimeout(timer);
+      timer=setTimeout(function(){clicks=0;},800);
+      if(clicks>=5){
+        clicks=0;
+        var hint=document.getElementById('adminHint');
+        hint.style.opacity='1';
+        setTimeout(function(){window.location.href='/henosis-admin';},700);
+      }
+    });
+  });
+})();
+</script>
+
+<script src="{{ url_for('static', filename='js/main.js') }}"></script>
+{% block extra_scripts %}{% endblock %}
 </body>
 </html>

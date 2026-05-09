@@ -1,10 +1,9 @@
 {% extends "base.html" %}
-{% block title %}Checkout — HENOSIS{% endblock %}
-
+{% block title %}Checkout — {{ settings.get('logo_text','HENOSIS') }}{% endblock %}
 {% block content %}
 <section class="section" style="padding-top:60px;">
   <div class="container">
-    <div style="margin-bottom:48px;">
+    <div style="margin-bottom:40px;" class="reveal">
       <span class="label">Secure Checkout</span>
       <h2 style="margin-top:12px;">Complete Your Order</h2>
     </div>
@@ -29,10 +28,10 @@
             </div>
           </div>
 
-          <h3 style="margin-top:12px;">Shipping Address</h3>
+          <h3 style="margin-top:8px;">Shipping Address</h3>
           <div class="form-group">
             <label>Street Address *</label>
-            <textarea name="address" required rows="2" placeholder="House/Flat no., Street, Locality" style="resize:vertical;"></textarea>
+            <textarea name="address" required rows="2" style="resize:vertical;" placeholder="House/Flat no., Street, Locality"></textarea>
           </div>
           <div class="form-row">
             <div class="form-group">
@@ -41,28 +40,33 @@
             </div>
             <div class="form-group">
               <label>PIN Code *</label>
-              <input type="text" name="pincode" required placeholder="6-digit PIN"/>
+              <input type="text" name="pincode" required placeholder="6-digit PIN" maxlength="6"/>
             </div>
           </div>
+          <div class="form-group">
+            <label>Order Note (optional)</label>
+            <input type="text" name="note" placeholder="Special instructions, gift message…"/>
+          </div>
 
-          <h3 style="margin-top:12px;">Payment</h3>
+          <!-- Discount Code -->
+          <h3 style="margin-top:8px;">Discount Code</h3>
+          <div style="display:flex;gap:10px;margin-bottom:24px;">
+            <input type="text" id="discountInput" placeholder="Enter code e.g. WELCOME20"
+                   style="flex:1;padding:12px 16px;border:1px solid var(--beige);font-family:'Raleway',sans-serif;font-size:.88rem;outline:none;border-radius:1px;text-transform:uppercase;"/>
+            <button type="button" onclick="applyDiscount()" class="btn btn-outline" style="flex-shrink:0;">Apply</button>
+          </div>
+          <div id="discountMsg" style="font-size:.8rem;margin-top:-16px;margin-bottom:20px;display:none;"></div>
+
+          <h3 style="margin-top:8px;">Payment</h3>
           <div style="background:var(--cream);border:1px solid var(--beige);padding:20px 24px;border-radius:2px;margin-bottom:28px;">
             <div style="display:flex;align-items:center;gap:12px;">
               <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--gold)" stroke-width="1.5"><rect x="1" y="4" width="22" height="16" rx="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg>
               <span style="font-size:.82rem;color:var(--gray-dark);">Cash on Delivery / Bank Transfer</span>
             </div>
-            <p style="font-size:.78rem;color:var(--gray-light);margin-top:8px;margin-left:32px;line-height:1.6;">
-              Our team will contact you after order placement with payment details.
-            </p>
+            <p style="font-size:.78rem;color:var(--gray-light);margin-top:8px;margin-left:32px;line-height:1.6;">Our team will contact you after order placement with payment details.</p>
           </div>
-
-          <button type="submit" class="btn btn-gold btn-full" style="font-size:.72rem;padding:16px;">
-            Place Order
-          </button>
-
-          <p style="font-size:.72rem;color:var(--gray-light);text-align:center;margin-top:16px;line-height:1.6;">
-            By placing an order, you agree to our terms of service and privacy policy.
-          </p>
+          <button type="submit" class="btn btn-gold btn-full" style="font-size:.72rem;padding:16px;">Place Order</button>
+          <p style="font-size:.72rem;color:var(--gray-light);text-align:center;margin-top:16px;line-height:1.6;">By placing an order, you agree to our terms of service.</p>
         </form>
       </div>
 
@@ -70,26 +74,119 @@
       <div class="reveal reveal-delay-2">
         <div class="order-summary">
           <h3>Your Selection</h3>
-          <div class="summary-items" id="summaryItems">
-            <p style="font-size:.85rem;color:var(--gray-mid);padding:20px 0;">Loading...</p>
+          <div class="summary-items" id="summaryItems"></div>
+          <div id="discountLine" style="display:none;padding:8px 0;border-top:1px solid var(--beige);font-size:.82rem;color:#2d7a2d;display:none;">
+            <div style="display:flex;justify-content:space-between;"><span id="discountLabel">Discount</span><span id="discountSaving" style="color:#2d7a2d;">-₹0</span></div>
           </div>
           <div class="summary-total">
-            <span>Order Total</span>
+            <span>Total</span>
             <span class="summary-total-price" id="summaryTotal">₹0</span>
           </div>
-          <div style="margin-top:20px;padding-top:20px;border-top:1px solid var(--beige);">
-            <div style="display:flex;justify-content:space-between;font-size:.75rem;color:var(--gray-mid);margin-bottom:8px;">
-              <span>Shipping</span>
-              <span>Calculated at confirmation</span>
-            </div>
-            <div style="display:flex;justify-content:space-between;font-size:.75rem;color:var(--gray-mid);">
-              <span>Payment</span>
-              <span>On Delivery / Transfer</span>
-            </div>
+          <div style="margin-top:16px;padding-top:16px;border-top:1px solid var(--beige);font-size:.75rem;color:var(--gray-mid);">
+            {% set min_s = settings.get('free_shipping_min','2000')|int %}
+            {% if min_s > 0 %}Free shipping on orders above {{ settings.get('currency_symbol','₹') }}{{ "{:,.0f}".format(min_s) }}.{% else %}Shipping calculated at confirmation.{% endif %}
           </div>
         </div>
       </div>
     </div>
   </div>
 </section>
+
+{% block extra_scripts %}
+<script>
+let appliedDiscount = null;
+
+async function applyDiscount() {
+  const code  = document.getElementById('discountInput').value.trim();
+  const msgEl = document.getElementById('discountMsg');
+  if (!code) return;
+  const total = cart.reduce((s,i) => s + i.price * i.qty, 0);
+  try {
+    const res  = await fetch('/api/discount', {
+      method: 'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({code, total})
+    });
+    const data = await res.json();
+    msgEl.style.display = 'block';
+    if (data.success) {
+      appliedDiscount = {code, amount: data.amount};
+      msgEl.style.color = '#2d7a2d';
+      msgEl.textContent = `✓ Code applied! You save ₹${data.amount.toLocaleString('en-IN')}`;
+      document.getElementById('discountLine').style.display = 'block';
+      document.getElementById('discountLabel').textContent  = `Code: ${code}`;
+      document.getElementById('discountSaving').textContent = `-₹${data.amount.toLocaleString('en-IN')}`;
+      updateSummaryTotal();
+    } else {
+      appliedDiscount = null;
+      msgEl.style.color = '#c44';
+      msgEl.textContent = data.error || 'Invalid code';
+      document.getElementById('discountLine').style.display = 'none';
+      updateSummaryTotal();
+    }
+  } catch { msgEl.style.color='#c44'; msgEl.textContent='Error applying code.'; msgEl.style.display='block'; }
+}
+
+function updateSummaryTotal() {
+  const subtotal = cart.reduce((s,i) => s+i.price*i.qty, 0);
+  const disc     = appliedDiscount ? appliedDiscount.amount : 0;
+  const total    = Math.max(0, subtotal - disc);
+  document.getElementById('summaryTotal').textContent = '₹' + total.toLocaleString('en-IN');
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+  renderCheckoutSummary();
+  // Allow Enter key on discount input
+  document.getElementById('discountInput').addEventListener('keydown', e => {
+    if (e.key === 'Enter') { e.preventDefault(); applyDiscount(); }
+  });
+});
+
+function renderCheckoutSummary() {
+  const container = document.getElementById('summaryItems');
+  const totalEl   = document.getElementById('summaryTotal');
+  if (!container) return;
+  if (cart.length === 0) {
+    container.innerHTML = '<p style="font-size:.85rem;color:var(--gray-mid);padding:12px 0;">No items in cart</p>';
+    return;
+  }
+  container.innerHTML = cart.map(item => `
+    <div class="summary-item">
+      <span class="summary-item-name">${item.name} <span style="color:var(--gray-light)">×${item.qty}</span></span>
+      <span class="summary-item-price">₹${(item.price*item.qty).toLocaleString('en-IN')}</span>
+    </div>`).join('');
+  updateSummaryTotal();
+}
+
+document.getElementById('checkoutForm').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  if (cart.length === 0) { showToast('Your cart is empty'); return; }
+  const btn = e.target.querySelector('[type="submit"]');
+  btn.textContent = 'Placing Order…'; btn.disabled = true;
+  const f = e.target;
+  const customer = {
+    name:    f.querySelector('[name=name]').value,
+    email:   f.querySelector('[name=email]').value,
+    phone:   f.querySelector('[name=phone]').value,
+    address: f.querySelector('[name=address]').value,
+    city:    f.querySelector('[name=city]').value,
+    pincode: f.querySelector('[name=pincode]').value,
+    note:    f.querySelector('[name=note]').value,
+  };
+  try {
+    const res  = await fetch('/checkout', {
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({cart, customer, discount_code: appliedDiscount ? appliedDiscount.code : ''})
+    });
+    const data = await res.json();
+    if (data.success) {
+      cart = []; saveCart();
+      window.location.href = `/order-success?id=${data.order_id}`;
+    } else {
+      showToast(data.error || 'Something went wrong');
+      btn.textContent = 'Place Order'; btn.disabled = false;
+    }
+  } catch { showToast('Network error. Please try again.'); btn.textContent='Place Order'; btn.disabled=false; }
+});
+</script>
+{% endblock %}
 {% endblock %}

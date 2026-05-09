@@ -4,3 +4,22 @@ hero_text,Where rarity meets artistry. Each piece tells a story that belongs to 
 banner_text,Free shipping on orders above ₹2000 · Exclusively crafted · One of a kind
 logo_text,HENOSIS
 logo_image,
+banner_active,true
+primary_color,#b8965a
+accent_color,#c9a96e
+footer_text,Crafted with intention.
+about_title,Where rarity meets artistry
+about_body,Henosis was born from a belief that jewellery should be more than an accessory. It should be a singular expression of identity.
+contact_email,henosis4india@gmail.com
+contact_phone,
+instagram_url,
+pinterest_url,
+whatsapp_number,
+free_shipping_min,2000
+currency_symbol,₹
+low_stock_alert,3
+maintenance_mode,false
+popup_enabled,false
+popup_title,Welcome to Henosis
+popup_text,Discover pieces crafted to stand alone.
+popup_cta,Shop Now

@@ -1,162 +1,133 @@
 # HENOSIS — Luxury Imitation Jewellery
 
-A full-stack luxury ecommerce website built with Flask, file-based storage, and a premium editorial design.
+Full-stack luxury ecommerce with Flask + PostgreSQL (Render) / SQLite (local).
 
 ---
 
-## 🚀 Quick Start (Local)
+## 🚀 Quick Start (Local — SQLite)
 
 ```bash
-# 1. Clone / download project
 cd henosis
-
-# 2. Create virtual environment
 python -m venv venv
-source venv/bin/activate        # macOS/Linux
-venv\Scripts\activate           # Windows
-
-# 3. Install dependencies
+source venv/bin/activate   # Windows: venv\Scripts\activate
 pip install -r requirements.txt
-
-# 4. Run
 python app.py
 ```
+→ http://localhost:5000  (uses SQLite automatically — no setup needed)
 
-Visit → http://localhost:5000
+---
+
+## ☁️ Deploy to Render (PostgreSQL — Persistent)
+
+1. Push to GitHub
+2. Go to **render.com** → New → **Blueprint**
+3. Connect your repo — Render reads `render.yaml` automatically
+4. It creates:
+   - A **Web Service** (your Flask app)
+   - A **PostgreSQL database** (free tier, persistent)
+   - Injects `DATABASE_URL` automatically
+5. Add env var: `ADMIN_PASSWORD_HASH` = SHA-256 hash of your password
+6. Deploy!
+
+### How DATABASE_URL works
+| Environment | Database | Set by |
+|---|---|---|
+| Local dev | SQLite (`data/henosis.db`) | Auto (no config needed) |
+| Render | PostgreSQL | `render.yaml` → `fromDatabase` |
+| Railway | PostgreSQL | Add `DATABASE_URL` env var manually |
 
 ---
 
 ## 🔐 Admin Access
 
-URL: `http://localhost:5000/henosis-admin`
+URL: `http://yoursite.com/henosis-admin`
+Or: **Click the footer logo 5 times quickly**
 
-| Field    | Value                         |
-|----------|-------------------------------|
-| Email    | henosis4india@gmail.com       |
-| Password | Henosis@2024                  |
+| Field | Default |
+|---|---|
+| Email | henosis4india@gmail.com |
+| Password | Henosis@2024 |
 
-⚠️ Change the password in `app.py` → `ADMIN_PASSWORD` before going live.
-To change: `hashlib.sha256('YourNewPassword'.encode()).hexdigest()`
+**Change password:** Admin → Change Password  
+Then set `ADMIN_PASSWORD_HASH` env var on Render to the new SHA-256 hash.
 
 ---
 
-## 📁 File Structure
+## ✨ Features
+
+### Store
+- Luxury homepage with hero, featured products, gallery, brand story
+- Shop with category filter, search, sort (price / newest)
+- Product detail with image gallery, reviews, related products
+- Cart drawer + full cart page
+- Checkout with discount codes, order notes
+- WhatsApp chat button (configurable)
+- Welcome popup (configurable)
+- Maintenance mode
+
+### Admin Panel (hidden at `/henosis-admin`)
+| Section | Features |
+|---|---|
+| **Dashboard** | Revenue stats, recent orders, low stock alerts, revenue chart |
+| **Products** | Add/edit/delete/duplicate, image upload, One-of-a-Kind toggle |
+| **Orders** | Status filter, update status/payment, admin notes, CSV export, delete |
+| **Customers** | View all, total orders & spend, delete, CSV export |
+| **Discounts** | Create codes (% or flat), usage limits, enable/disable/delete |
+| **Reviews** | Approve/delete customer reviews |
+| **Analytics** | Revenue chart, order status breakdown, category sales, top customers |
+| **Settings** | 7-tab settings: Brand, Hero, Banner, Shop, Colors, SEO, Advanced |
+| **Change Password** | Secure password update |
+
+### Settings Tabs
+- **Brand** — Logo (text or image), footer text, contact info, social links, WhatsApp
+- **Hero** — Tagline, subtext, background image, live preview
+- **Banner** — Announcement bar text, show/hide toggle
+- **Shop** — Currency symbol, free shipping threshold, low stock alert, show reviews
+- **Colors** — Primary gold + accent champagne color pickers
+- **SEO** — Meta title, meta description, Google Analytics ID
+- **Advanced** — Maintenance mode, welcome popup (title, text, CTA)
+
+---
+
+## 📁 Project Structure
 
 ```
 henosis/
-├── app.py                  # Main Flask application
-├── requirements.txt        # Python dependencies
-├── Procfile               # For Railway/Render
-├── render.yaml            # Render config
-├── runtime.txt            # Python version
-├── data/                  # Auto-created data storage
-│   ├── products.csv
-│   ├── products.dat
-│   ├── orders.csv
-│   ├── orders.dat
-│   ├── settings.csv
-│   ├── settings.dat
-│   └── customers.csv
+├── app.py              # Flask routes + logic
+├── db.py               # PostgreSQL/SQLite abstraction layer
+├── requirements.txt    # Dependencies
+├── Procfile            # Gunicorn start command
+├── render.yaml         # Render Blueprint (app + DB)
+├── runtime.txt         # Python 3.11
+├── data/               # SQLite DB (local dev only)
+│   └── henosis.db
 ├── static/
-│   ├── css/main.css       # Full design system
-│   ├── js/main.js         # Cart, animations, interactions
-│   └── uploads/           # Product & logo images
+│   ├── css/main.css    # Full luxury design system
+│   ├── js/main.js      # Cart, animations, interactions
+│   └── uploads/        # Product & logo images
 └── templates/
-    ├── base.html           # Shared layout with nav/footer
-    ├── index.html          # Homepage
-    ├── shop.html           # Product listing
-    ├── product.html        # Product detail
-    ├── checkout.html       # Checkout form
-    ├── order_success.html  # Confirmation
-    ├── about.html          # Brand story
-    └── admin/
-        ├── base.html       # Admin layout
-        ├── login.html      # Admin login
-        ├── dashboard.html  # Stats & overview
-        ├── products.html   # Product list
-        ├── product_form.html # Add/edit product
-        ├── orders.html     # Order management
-        └── settings.html   # Site settings
+    ├── base.html        # Nav, footer, cart drawer, popups
+    ├── index.html       # Homepage
+    ├── shop.html        # Product listing
+    ├── product.html     # Product detail + reviews
+    ├── cart.html        # Cart page
+    ├── checkout.html    # Checkout + discount codes
+    ├── order_success.html
+    ├── about.html
+    ├── maintenance.html
+    └── admin/           # All admin templates
 ```
 
 ---
 
-## ☁️ Deploy to Render (Free Tier)
+## 🔒 Security
 
-1. Push code to GitHub
-2. Go to https://render.com → New Web Service
-3. Connect your repo
-4. Settings:
-   - Build Command: `pip install -r requirements.txt`
-   - Start Command: `gunicorn app:app --bind 0.0.0.0:$PORT`
-5. Add environment variable: `SECRET_KEY` → any random string
-6. Add a Disk: mount at `/opt/render/project/src/data` (for persistent data)
-7. Deploy!
+- Admin route hidden (not linked publicly)
+- Password SHA-256 hashed
+- Flask session-based auth
+- Protected admin routes via decorator
+- Set `SECRET_KEY` env var in production (auto-generated on Render via `generateValue: true`)
 
 ---
 
-## ☁️ Deploy to Railway
-
-1. Push code to GitHub
-2. Go to https://railway.app → New Project → Deploy from GitHub
-3. Add environment variable: `SECRET_KEY` → any random string
-4. Railway auto-detects the Procfile
-5. Deploy!
-
----
-
-## ✏️ Admin Features
-
-| Feature              | How                                   |
-|----------------------|---------------------------------------|
-| Add products         | Admin → Products → Add Product        |
-| Edit products        | Admin → Products → Edit               |
-| Delete products      | Admin → Products → Delete             |
-| Manage orders        | Admin → Orders                        |
-| Update order status  | Admin → Orders → Update               |
-| Change tagline       | Admin → Settings                      |
-| Change hero text     | Admin → Settings                      |
-| Change logo          | Admin → Settings → Upload Logo        |
-| Change banner        | Admin → Settings                      |
-
----
-
-## 💎 Design System
-
-**Colors:**
-- Ivory: `#faf8f4` — Background
-- Champagne Gold: `#c9a96e` — Accents
-- Gold: `#b8965a` — CTAs, prices
-- Charcoal: `#1a1a1a` — Headers, dark sections
-- Cream: `#f5f0e8` — Card backgrounds
-
-**Fonts:**
-- Headings: Cormorant Garamond (serif)
-- Body: Raleway (sans-serif)
-
----
-
-## 📦 Data Storage
-
-All data is automatically stored in flat files:
-
-- `data/products.csv` + `data/products.dat` — Product catalogue
-- `data/orders.csv` + `data/orders.dat` — Customer orders
-- `data/settings.csv` + `data/settings.dat` — Site settings
-- `static/uploads/` — All uploaded images
-
-No database required. Files are auto-created on first run.
-
----
-
-## 🔒 Security Notes
-
-- Admin route is hidden at `/henosis-admin` (not linked publicly)
-- Password is SHA-256 hashed
-- Flask session-based authentication
-- Change `SECRET_KEY` in production (use environment variable)
-- Change default admin password before deploying
-
----
-
-Made with ♥ for Henosis.
+Made with ♥ for Henosis — *Crafted to stand alone.*

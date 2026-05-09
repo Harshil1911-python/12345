@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>{{ settings.get('logo_text','HENOSIS') }} — Coming Soon</title>
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;1,300&family=Raleway:wght@300;400&display=swap" rel="stylesheet"/>
+  <style>
+    *{box-sizing:border-box;margin:0;padding:0;}
+    body{font-family:'Raleway',sans-serif;background:#0e0e0e;color:#faf8f4;min-height:100vh;
+    display:flex;align-items:center;justify-content:center;text-align:center;padding:40px;}
+    h1{font-family:'Cormorant Garamond',serif;font-size:clamp(3rem,8vw,6rem);font-weight:300;
+    letter-spacing:-.01em;margin-bottom:24px;font-style:italic;}
+    p{color:rgba(250,248,244,.5);font-size:.9rem;line-height:1.9;max-width:400px;margin:0 auto 40px;}
+    .label{font-size:.6rem;letter-spacing:.3em;text-transform:uppercase;color:#c9a96e;margin-bottom:24px;display:block;}
+    .line{width:40px;height:1px;background:#b8965a;margin:32px auto;}
+  </style>
+</head>
+<body>
+  <div>
+    <span class="label">{{ settings.get('logo_text','HENOSIS') }}</span>
+    <h1>We're crafting something beautiful</h1>
+    <div class="line"></div>
+    <p>Our store is temporarily unavailable while we make improvements. We'll be back soon with something extraordinary.</p>
+    <p style="font-size:.75rem;color:rgba(250,248,244,.3);">
+      {% if settings.get('contact_email') %}Questions? <a href="mailto:{{ settings.contact_email }}" style="color:#c9a96e;">{{ settings.contact_email }}</a>{% endif %}
+    </p>
+  </div>
+</body>
+</html>

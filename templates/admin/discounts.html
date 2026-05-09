@@ -1,0 +1,84 @@
+{% extends "admin/base.html" %}
+{% block page_title %}Discount Codes{% endblock %}
+{% block content %}
+
+<div style="display:grid;grid-template-columns:1fr 360px;gap:24px;align-items:start;">
+  <!-- List -->
+  <div class="card">
+    <div class="card-title">All Codes ({{ discounts|length }})</div>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>Code</th><th>Type</th><th>Value</th><th>Min Order</th><th>Uses Left</th><th>Status</th><th></th></tr></thead>
+        <tbody>
+          {% for d in discounts %}
+          <tr>
+            <td><span style="font-family:monospace;font-size:.9rem;font-weight:600;letter-spacing:.05em;color:var(--charcoal);">{{ d.code }}</span></td>
+            <td><span class="badge badge-gray">{{ d.discount_type }}</span></td>
+            <td style="font-weight:500;color:var(--gold);">{% if d.discount_type=='percent' %}{{ d.value }}%{% else %}₹{{ d.value }}{% endif %}</td>
+            <td style="font-size:.78rem;">{% if d.min_order and d.min_order != '0' %}₹{{ d.min_order }}{% else %}—{% endif %}</td>
+            <td>
+              {% if d.uses_left|int <= 0 %}
+                <span class="badge badge-danger">Expired</span>
+              {% elif d.uses_left|int <= 5 %}
+                <span class="badge badge-warning">{{ d.uses_left }} left</span>
+              {% else %}
+                <span class="badge badge-success">{{ d.uses_left }} left</span>
+              {% endif %}
+            </td>
+            <td>
+              {% if d.active=='true' %}<span class="badge badge-success">Active</span>
+              {% else %}<span class="badge badge-danger">Inactive</span>{% endif %}
+            </td>
+            <td>
+              <div style="display:flex;gap:6px;">
+                <form method="POST" action="{{ url_for('admin_toggle_discount',code=d.code) }}">
+                  <button type="submit" class="btn btn-outline btn-sm">{{ 'Disable' if d.active=='true' else 'Enable' }}</button>
+                </form>
+                <form method="POST" action="{{ url_for('admin_delete_discount',code=d.code) }}"
+                  onsubmit="return confirm('Delete code {{ d.code }}?')">
+                  <button type="submit" class="btn btn-danger btn-sm">Delete</button>
+                </form>
+              </div>
+            </td>
+          </tr>
+          {% else %}
+          <tr class="empty-row"><td colspan="7">No discount codes yet</td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- Create form -->
+  <div class="card">
+    <div class="card-title">Create New Code</div>
+    <form method="POST" action="{{ url_for('admin_add_discount') }}">
+      <div class="form-group">
+        <label>Code *</label>
+        <input type="text" name="code" required placeholder="e.g. WELCOME20" style="text-transform:uppercase;font-family:monospace;letter-spacing:.05em;"/>
+        <p class="form-hint">Will be auto-uppercased. Share with customers.</p>
+      </div>
+      <div class="form-group">
+        <label>Discount Type *</label>
+        <select name="discount_type">
+          <option value="percent">Percentage (%)</option>
+          <option value="flat">Flat Amount (₹)</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label>Value *</label>
+        <input type="number" name="value" required min="1" placeholder="e.g. 20 for 20% or ₹200"/>
+      </div>
+      <div class="form-group">
+        <label>Minimum Order (₹)</label>
+        <input type="number" name="min_order" value="0" min="0" placeholder="0 = no minimum"/>
+      </div>
+      <div class="form-group">
+        <label>Total Uses Allowed</label>
+        <input type="number" name="uses_left" value="100" min="1"/>
+      </div>
+      <button type="submit" class="btn btn-gold btn-full">Create Code</button>
+    </form>
+  </div>
+</div>
+{% endblock %}

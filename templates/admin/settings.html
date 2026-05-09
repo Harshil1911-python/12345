@@ -1,89 +1,245 @@
 {% extends "admin/base.html" %}
 {% block page_title %}Site Settings{% endblock %}
-
 {% block content %}
-<div class="page-actions">
-  <div class="page-title">Homepage & Brand Settings</div>
+
+{% set tabs = [('brand','Brand & Contact'),('hero','Homepage Hero'),('banner','Banner'),('shop','Shop & Orders'),('colors','Colors'),('seo','SEO'),('advanced','Advanced')] %}
+
+<!-- Tab bar -->
+<div style="display:flex;gap:4px;margin-bottom:24px;background:var(--white);padding:6px;border-radius:4px;box-shadow:0 2px 12px rgba(14,14,14,.04);flex-wrap:wrap;">
+  {% for tid,tlabel in tabs %}
+  <a href="{{ url_for('admin_settings',tab=tid) }}"
+     style="padding:8px 16px;font-size:.65rem;letter-spacing:.1em;text-transform:uppercase;border-radius:3px;
+     transition:all .2s;font-family:var(--font-body);font-weight:{% if active_tab==tid %}600{% else %}400{% endif %};
+     background:{% if active_tab==tid %}var(--charcoal){% else %}transparent{% endif %};
+     color:{% if active_tab==tid %}var(--ivory){% else %}var(--gray-mid){% endif %};">{{ tlabel }}</a>
+  {% endfor %}
 </div>
 
-<form method="POST" enctype="multipart/form-data">
-  <div style="display:grid;grid-template-columns:1fr 1fr;gap:24px;">
+<form method="POST" enctype="multipart/form-data" action="{{ url_for('admin_settings') }}">
+  <input type="hidden" name="tab" value="{{ active_tab }}"/>
 
-    <!-- Brand Identity -->
+  <!-- BRAND TAB -->
+  {% if active_tab == 'brand' %}
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px;">
     <div class="card">
-      <div class="card-title">Brand Identity</div>
+      <div class="card-title">Logo</div>
       <div class="form-group">
-        <label>Logo Text</label>
-        <input type="text" name="logo_text" value="{{ settings.get('logo_text','HENOSIS') }}" placeholder="HENOSIS"/>
-        <p style="font-size:.7rem;color:var(--gray-mid);margin-top:6px;">Shown in header when no logo image is uploaded.</p>
+        <label>Logo Text (shown without image)</label>
+        <input type="text" name="logo_text" value="{{ settings.get('logo_text','HENOSIS') }}"/>
       </div>
       <div class="form-group">
-        <label>Logo Image (optional)</label>
-        <input type="file" name="logo_image" accept="image/*" style="background:var(--white);padding:10px;"/>
+        <label>Logo Image (overrides text)</label>
+        <input type="file" name="logo_image" accept="image/*" style="padding:8px;background:var(--white);"/>
         {% if settings.get('logo_image') %}
-          <div style="margin-top:12px;display:flex;align-items:center;gap:12px;">
-            <img src="/uploads/{{ settings.logo_image }}" style="height:40px;width:auto;border:1px solid var(--beige);padding:4px;border-radius:2px;"/>
-            <span style="font-size:.72rem;color:var(--gray-mid);">Current logo</span>
-          </div>
+        <div style="margin-top:10px;display:flex;align-items:center;gap:12px;">
+          <img src="/uploads/{{ settings.logo_image }}" style="height:36px;border:1px solid var(--beige);padding:4px;border-radius:2px;"/>
+          <form method="POST" action="{{ url_for('admin_reset_logo') }}" style="display:inline;">
+            <button type="submit" class="btn btn-danger btn-sm">Remove</button>
+          </form>
+        </div>
         {% endif %}
       </div>
     </div>
-
-    <!-- Announcement -->
     <div class="card">
-      <div class="card-title">Announcement Banner</div>
-      <div class="form-group">
-        <label>Banner Text</label>
-        <input type="text" name="banner_text" value="{{ settings.get('banner_text','') }}" placeholder="Free shipping on orders above ₹2000…"/>
-        <p style="font-size:.7rem;color:var(--gray-mid);margin-top:6px;">Displayed at the top of every page.</p>
+      <div class="card-title">Footer & Contact</div>
+      <div class="form-group"><label>Footer Text</label>
+        <input name="footer_text" value="{{ settings.get('footer_text','') }}"/>
+      </div>
+      <div class="form-group"><label>Contact Email</label>
+        <input type="email" name="contact_email" value="{{ settings.get('contact_email','') }}"/>
+      </div>
+      <div class="form-group"><label>Contact Phone</label>
+        <input name="contact_phone" value="{{ settings.get('contact_phone','') }}" placeholder="+91 XXXXX XXXXX"/>
       </div>
     </div>
+    <div class="card">
+      <div class="card-title">Social Media</div>
+      <div class="form-group"><label>Instagram URL</label>
+        <input name="instagram_url" value="{{ settings.get('instagram_url','') }}" placeholder="https://instagram.com/henosis"/>
+      </div>
+      <div class="form-group"><label>Pinterest URL</label>
+        <input name="pinterest_url" value="{{ settings.get('pinterest_url','') }}" placeholder="https://pinterest.com/henosis"/>
+      </div>
+      <div class="form-group"><label>WhatsApp Number (with country code)</label>
+        <input name="whatsapp_number" value="{{ settings.get('whatsapp_number','') }}" placeholder="919876543210"/>
+      </div>
+      <label class="form-check">
+        <input type="checkbox" name="whatsapp_chat" {% if settings.get('whatsapp_chat')=='true' %}checked{% endif %}/>
+        <span>Show WhatsApp chat button on store</span>
+      </label>
+    </div>
+  </div>
 
-    <!-- Hero Section -->
-    <div class="card" style="grid-column:1/-1;">
-      <div class="card-title">Homepage Hero Section</div>
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px;">
+  <!-- HERO TAB -->
+  {% elif active_tab == 'hero' %}
+  <div style="display:grid;grid-template-columns:1fr;gap:20px;">
+    <div class="card">
+      <div class="card-title">Hero Section</div>
+      <div class="form-grid">
         <div class="form-group">
-          <label>Hero Tagline (H1)</label>
-          <input type="text" name="tagline" value="{{ settings.get('tagline','') }}" placeholder="Crafted to stand alone."/>
-          <p style="font-size:.7rem;color:var(--gray-mid);margin-top:6px;">The main headline shown on the hero section.</p>
+          <label>Main Tagline (H1)</label>
+          <input id="taglineInput" name="tagline" value="{{ settings.get('tagline','') }}"/>
+          <p class="form-hint">The large headline on the homepage.</p>
         </div>
         <div class="form-group">
           <label>Hero Subtext</label>
-          <textarea name="hero_text" rows="3" placeholder="Where rarity meets artistry…">{{ settings.get('hero_text','') }}</textarea>
-          <p style="font-size:.7rem;color:var(--gray-mid);margin-top:6px;">The supporting text beneath the tagline.</p>
+          <textarea id="subtextInput" name="hero_text" rows="3">{{ settings.get('hero_text','') }}</textarea>
+        </div>
+        <div class="form-group">
+          <label>Hero Background Image (optional)</label>
+          <input type="file" name="hero_image" accept="image/*" style="padding:8px;background:var(--white);"/>
+          {% if settings.get('hero_image') %}
+          <div style="margin-top:10px;display:flex;align-items:center;gap:12px;">
+            <img src="/uploads/{{ settings.hero_image }}" style="height:60px;border:1px solid var(--beige);border-radius:2px;object-fit:cover;"/>
+            <form method="POST" action="{{ url_for('admin_reset_hero') }}" style="display:inline;">
+              <button type="submit" class="btn btn-danger btn-sm">Remove</button>
+            </form>
+          </div>
+          {% endif %}
         </div>
       </div>
     </div>
-
-  </div>
-
-  <!-- Preview -->
-  <div class="card" style="margin-top:24px;background:var(--charcoal);color:var(--ivory);">
-    <div style="font-size:.62rem;letter-spacing:.2em;text-transform:uppercase;color:var(--champagne);margin-bottom:16px;">Live Preview</div>
-    <div style="text-align:center;padding:40px 20px;">
-      <div style="font-size:.6rem;letter-spacing:.25em;text-transform:uppercase;color:var(--champagne);margin-bottom:12px;">Luxury Imitation Jewellery</div>
-      <div id="previewTagline" style="font-family:'Cormorant Garamond',serif;font-size:2.5rem;font-weight:300;color:var(--ivory);margin-bottom:16px;line-height:1.1;">
-        {{ settings.get('tagline','Crafted to stand alone.') }}
-      </div>
-      <div id="previewSub" style="font-size:.82rem;color:rgba(250,248,244,.55);line-height:1.8;max-width:400px;margin:0 auto;">
-        {{ settings.get('hero_text','') }}
+    <!-- Live preview -->
+    <div class="card" style="background:var(--charcoal);">
+      <div style="font-size:.58rem;letter-spacing:.2em;text-transform:uppercase;color:var(--champagne);margin-bottom:16px;">Live Preview</div>
+      <div style="text-align:center;padding:40px 20px;">
+        <div id="pTagline" style="font-family:'Cormorant Garamond',serif;font-size:2.5rem;font-weight:300;color:var(--ivory);margin-bottom:12px;line-height:1.1;">{{ settings.get('tagline','') }}</div>
+        <div id="pSub" style="font-size:.82rem;color:rgba(250,248,244,.5);line-height:1.8;max-width:400px;margin:0 auto;">{{ settings.get('hero_text','') }}</div>
       </div>
     </div>
   </div>
+  <script>
+    document.getElementById('taglineInput').addEventListener('input',function(){ document.getElementById('pTagline').textContent=this.value; });
+    document.getElementById('subtextInput').addEventListener('input',function(){ document.getElementById('pSub').textContent=this.value; });
+  </script>
 
-  <div style="margin-top:24px;display:flex;gap:12px;">
-    <button type="submit" class="btn btn-gold">Save All Settings</button>
+  <!-- BANNER TAB -->
+  {% elif active_tab == 'banner' %}
+  <div class="card" style="max-width:700px;">
+    <div class="card-title">Announcement Banner</div>
+    <div class="form-group">
+      <label>Banner Text</label>
+      <input name="banner_text" value="{{ settings.get('banner_text','') }}"/>
+      <p class="form-hint">Shown at top of every page. Use · to separate items.</p>
+    </div>
+    <label class="form-check">
+      <input type="checkbox" name="banner_active" {% if settings.get('banner_active','true')=='true' %}checked{% endif %}/>
+      <span>Show announcement banner</span>
+    </label>
+  </div>
+
+  <!-- SHOP TAB -->
+  {% elif active_tab == 'shop' %}
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px;">
+    <div class="card">
+      <div class="card-title">Shipping & Pricing</div>
+      <div class="form-group">
+        <label>Currency Symbol</label>
+        <input name="currency_symbol" value="{{ settings.get('currency_symbol','₹') }}" style="max-width:80px;"/>
+      </div>
+      <div class="form-group">
+        <label>Free Shipping Minimum (₹)</label>
+        <input type="number" name="free_shipping_min" value="{{ settings.get('free_shipping_min','2000') }}"/>
+        <p class="form-hint">Set 0 to disable free shipping threshold.</p>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-title">Inventory Alerts</div>
+      <div class="form-group">
+        <label>Low Stock Alert Threshold</label>
+        <input type="number" name="low_stock_alert" value="{{ settings.get('low_stock_alert','3') }}" min="0"/>
+        <p class="form-hint">Warn on dashboard when stock ≤ this number.</p>
+      </div>
+      <label class="form-check">
+        <input type="checkbox" name="show_reviews" {% if settings.get('show_reviews','true')=='true' %}checked{% endif %}/>
+        <span>Show customer reviews on product pages</span>
+      </label>
+    </div>
+  </div>
+
+  <!-- COLORS TAB -->
+  {% elif active_tab == 'colors' %}
+  <div class="card" style="max-width:600px;">
+    <div class="card-title">Brand Colors</div>
+    <p style="font-size:.78rem;color:var(--gray-mid);margin-bottom:20px;line-height:1.7;">Customize the accent and gold colors used across the site. Changes apply after saving.</p>
+    <div class="form-grid">
+      <div class="form-group">
+        <label>Primary Gold Color</label>
+        <div style="display:flex;align-items:center;gap:10px;">
+          <input type="color" name="primary_color" value="{{ settings.get('primary_color','#b8965a') }}" style="width:48px;height:36px;padding:2px;border:1px solid var(--beige);border-radius:2px;cursor:pointer;"/>
+          <input type="text" id="primaryHex" value="{{ settings.get('primary_color','#b8965a') }}" style="font-family:monospace;max-width:100px;" oninput="document.querySelector('[name=primary_color]').value=this.value"/>
+        </div>
+        <p class="form-hint">Used for buttons, prices, accents.</p>
+      </div>
+      <div class="form-group">
+        <label>Accent Champagne Color</label>
+        <div style="display:flex;align-items:center;gap:10px;">
+          <input type="color" name="accent_color" value="{{ settings.get('accent_color','#c9a96e') }}" style="width:48px;height:36px;padding:2px;border:1px solid var(--beige);border-radius:2px;cursor:pointer;"/>
+          <input type="text" id="accentHex" value="{{ settings.get('accent_color','#c9a96e') }}" style="font-family:monospace;max-width:100px;" oninput="document.querySelector('[name=accent_color]').value=this.value"/>
+        </div>
+        <p class="form-hint">Used for labels, badges, highlights.</p>
+      </div>
+    </div>
+    <script>
+      document.querySelector('[name=primary_color]').addEventListener('input',function(){document.getElementById('primaryHex').value=this.value;});
+      document.querySelector('[name=accent_color]').addEventListener('input',function(){document.getElementById('accentHex').value=this.value;});
+    </script>
+  </div>
+
+  <!-- SEO TAB -->
+  {% elif active_tab == 'seo' %}
+  <div class="card" style="max-width:700px;">
+    <div class="card-title">SEO & Analytics</div>
+    <div class="form-group">
+      <label>Meta Title</label>
+      <input name="meta_title" value="{{ settings.get('meta_title','') }}" placeholder="HENOSIS — Crafted to stand alone."/>
+      <p class="form-hint">Shown in browser tab and search results. Ideal length: 50–60 chars.</p>
+    </div>
+    <div class="form-group">
+      <label>Meta Description</label>
+      <textarea name="meta_description" rows="3">{{ settings.get('meta_description','') }}</textarea>
+      <p class="form-hint">Shown in search results. Ideal length: 120–160 chars.</p>
+    </div>
+    <div class="form-group">
+      <label>Google Analytics Measurement ID</label>
+      <input name="google_analytics" value="{{ settings.get('google_analytics','') }}" placeholder="G-XXXXXXXXXX" style="font-family:monospace;"/>
+      <p class="form-hint">Paste your GA4 Measurement ID to enable Google Analytics.</p>
+    </div>
+  </div>
+
+  <!-- ADVANCED TAB -->
+  {% elif active_tab == 'advanced' %}
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px;">
+    <div class="card">
+      <div class="card-title">Maintenance Mode</div>
+      <p style="font-size:.78rem;color:var(--gray-mid);margin-bottom:16px;line-height:1.7;">When enabled, the store shows a maintenance page to all visitors. Admins can still access the store normally.</p>
+      <label class="form-check">
+        <input type="checkbox" name="maintenance_mode" {% if settings.get('maintenance_mode')=='true' %}checked{% endif %}/>
+        <span><strong>Enable maintenance mode</strong></span>
+      </label>
+    </div>
+    <div class="card">
+      <div class="card-title">Welcome Popup</div>
+      <label class="form-check" style="margin-bottom:16px;">
+        <input type="checkbox" name="popup_enabled" {% if settings.get('popup_enabled')=='true' %}checked{% endif %}/>
+        <span>Show welcome popup to new visitors</span>
+      </label>
+      <div class="form-group"><label>Popup Title</label>
+        <input name="popup_title" value="{{ settings.get('popup_title','') }}"/>
+      </div>
+      <div class="form-group"><label>Popup Text</label>
+        <textarea name="popup_text" rows="2">{{ settings.get('popup_text','') }}</textarea>
+      </div>
+      <div class="form-group"><label>Popup Button Text</label>
+        <input name="popup_cta" value="{{ settings.get('popup_cta','Shop Now') }}"/>
+      </div>
+    </div>
+  </div>
+  {% endif %}
+
+  <div style="margin-top:20px;display:flex;gap:10px;align-items:center;">
+    <button type="submit" class="btn btn-gold">Save Settings</button>
     <a href="{{ url_for('index') }}" target="_blank" class="btn btn-outline">Preview Store ↗</a>
   </div>
 </form>
-
-<script>
-  document.querySelector('[name="tagline"]').addEventListener('input', function() {
-    document.getElementById('previewTagline').textContent = this.value || 'Crafted to stand alone.';
-  });
-  document.querySelector('[name="hero_text"]').addEventListener('input', function() {
-    document.getElementById('previewSub').textContent = this.value;
-  });
-</script>
 {% endblock %}

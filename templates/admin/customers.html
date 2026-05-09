@@ -1,0 +1,46 @@
+{% extends "admin/base.html" %}
+{% block page_title %}Customers{% endblock %}
+{% block content %}
+<div class="page-actions">
+  <div class="page-title">All Customers ({{ customers|length }})</div>
+  <div class="page-actions-right">
+    <a href="{{ url_for('admin_export_customers') }}" class="btn btn-outline btn-sm">
+      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+      Export CSV
+    </a>
+  </div>
+</div>
+
+<div class="card">
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr><th>Customer</th><th>Contact</th><th>Location</th><th>Orders</th><th>Total Spent</th><th>Since</th><th></th></tr>
+      </thead>
+      <tbody>
+        {% for c in customers %}
+        <tr>
+          <td>
+            <div style="font-weight:500;">{{ c.name }}</div>
+            <div style="font-size:.7rem;color:var(--gray-mid);">{{ c.email }}</div>
+          </td>
+          <td style="font-size:.78rem;">{{ c.phone or '—' }}</td>
+          <td style="font-size:.78rem;">{{ c.city or '—' }}{% if c.pincode %} · {{ c.pincode }}{% endif %}</td>
+          <td><span class="badge badge-gold">{{ c.total_orders }} order{{ 's' if c.total_orders|int != 1 else '' }}</span></td>
+          <td style="font-weight:500;color:var(--gold);">₹{{ "{:,.0f}".format(c.total_spent|float) }}</td>
+          <td style="font-size:.72rem;color:var(--gray-mid);">{{ c.created_at[:10] }}</td>
+          <td>
+            <form method="POST" action="{{ url_for('admin_delete_customer',cid=c.id) }}"
+              onsubmit="return confirm('Delete {{ c.name }}? Their order history will remain.')">
+              <button type="submit" class="btn btn-danger btn-sm">Delete</button>
+            </form>
+          </td>
+        </tr>
+        {% else %}
+        <tr class="empty-row"><td colspan="7">No customers yet</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}
