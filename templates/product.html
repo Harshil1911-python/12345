@@ -1,17 +1,12 @@
 {% extends "base.html" %}
 {% block title %}{{ product.name }} — {{ settings.get('logo_text','HENOSIS') }}{% endblock %}
 {% block content %}
-{% set images = product.images.split(',') if product.images else [] %}
-
 <section class="section" style="padding-top:60px;">
   <div class="container">
-    <!-- Breadcrumb -->
     <div class="breadcrumb reveal">
       <a href="{{ url_for('index') }}">Home</a><span class="breadcrumb-sep">·</span>
       <a href="{{ url_for('shop') }}">Shop</a><span class="breadcrumb-sep">·</span>
-      {% if product.category %}
-      <a href="{{ url_for('shop',category=product.category) }}">{{ product.category }}</a><span class="breadcrumb-sep">·</span>
-      {% endif %}
+      {% if product.category %}<a href="{{ url_for('shop',category=product.category) }}">{{ product.category }}</a><span class="breadcrumb-sep">·</span>{% endif %}
       <span>{{ product.name }}</span>
     </div>
 
@@ -20,20 +15,18 @@
       <div class="product-images reveal">
         <div class="product-main-image">
           {% if images and images[0] %}
-            <img id="mainProductImage" src="{{ url_for('uploaded_file',filename=images[0]) }}" alt="{{ product.name }}" style="width:100%;height:100%;object-fit:cover;transition:opacity .3s,transform .3s;"/>
+            <img id="mainProductImage" src="{{ url_for('serve_product_image',img_id=images[0].id) }}" alt="{{ product.name }}" style="width:100%;height:100%;object-fit:cover;transition:opacity .3s,transform .3s;"/>
           {% else %}
-            <div class="product-placeholder" style="width:100%;height:100%;">
-              <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="0.6"><polygon points="12,2 15.09,8.26 22,9.27 17,14.14 18.18,21.02 12,17.77 5.82,21.02 7,14.14 2,9.27 8.91,8.26"/></svg>
-            </div>
+            <div class="product-placeholder" style="width:100%;height:100%;"><svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="0.6"><polygon points="12,2 15.09,8.26 22,9.27 17,14.14 18.18,21.02 12,17.77 5.82,21.02 7,14.14 2,9.27 8.91,8.26"/></svg></div>
           {% endif %}
         </div>
         {% if images|length > 1 %}
         <div class="product-thumbs">
-          {% for img in images %}{% if img %}
-          <div class="product-thumb {% if loop.first %}active{% endif %}" data-src="{{ url_for('uploaded_file',filename=img) }}">
-            <img src="{{ url_for('uploaded_file',filename=img) }}" alt="{{ product.name }} {{ loop.index }}"/>
+          {% for img in images %}
+          <div class="product-thumb {% if loop.first %}active{% endif %}" data-src="{{ url_for('serve_product_image',img_id=img.id) }}">
+            <img src="{{ url_for('serve_product_image',img_id=img.id) }}" alt="{{ product.name }} {{ loop.index }}"/>
           </div>
-          {% endif %}{% endfor %}
+          {% endfor %}
         </div>
         {% endif %}
       </div>
@@ -42,67 +35,21 @@
       <div class="product-info reveal reveal-delay-2">
         <span class="label">{{ product.category }}</span>
         <h1 style="margin-top:10px;margin-bottom:18px;">{{ product.name }}</h1>
-
-        {% if avg_rating and avg_rating > 0 %}
-        <div style="display:flex;align-items:center;gap:8px;margin-bottom:16px;">
-          <div style="color:var(--gold);font-size:.95rem;">
-            {% for i in range(avg_rating|int) %}★{% endfor %}{% if avg_rating % 1 >= 0.5 %}½{% endif %}{% for i in range(5 - avg_rating|round(0,'ceil')|int) %}☆{% endfor %}
-          </div>
-          <span style="font-size:.72rem;color:var(--gray-mid);">({{ reviews|length }} review{{ 's' if reviews|length != 1 else '' }})</span>
-        </div>
-        {% endif %}
-
-        {% if product.only_one %}
-        <div class="product-rarity">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><polygon points="12,2 15.09,8.26 22,9.27 17,14.14 18.18,21.02 12,17.77 5.82,21.02 7,14.14 2,9.27 8.91,8.26"/></svg>
-          One of a Kind — The only piece in existence
-        </div>
-        {% endif %}
-
-        <div class="product-price">{{ settings.get('currency_symbol','₹') }}{{ "{:,.0f}".format(product.price|float) }}</div>
+        {% if avg_rating and avg_rating > 0 %}<div style="display:flex;align-items:center;gap:8px;margin-bottom:16px;"><div style="color:var(--gold);font-size:.95rem;">{% for i in range(avg_rating|int) %}★{% endfor %}{% for i in range(5-avg_rating|int) %}☆{% endfor %}</div><span style="font-size:.72rem;color:var(--gray-mid);">({{ reviews|length }} review{{ 's' if reviews|length!=1 else '' }})</span></div>{% endif %}
+        {% if product.only_one %}<div class="product-rarity"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><polygon points="12,2 15.09,8.26 22,9.27 17,14.14 18.18,21.02 12,17.77 5.82,21.02 7,14.14 2,9.27 8.91,8.26"/></svg>One of a Kind — The only piece in existence</div>{% endif %}
+        <div class="product-price">{{ settings.get('currency_symbol','₹') }}{{ "{:,.0f}".format(product.price) }}</div>
         <p class="product-description">{{ product.description }}</p>
-
         <div class="product-actions" id="productActions">
-          {% if product.stock|int > 0 %}
-          <button class="btn btn-gold" onclick="addToCart('{{ product.id }}','{{ product.name|replace("'","\\'") }}','{{ product.price }}','{{ images[0] if images else '' }}',{{ 'true' if product.only_one else 'false' }})">
-            Add to Selection
-          </button>
-          <a href="{{ url_for('checkout') }}" class="btn btn-outline" onclick="addToCart('{{ product.id }}','{{ product.name|replace("'","\\'") }}','{{ product.price }}','{{ images[0] if images else '' }}',{{ 'true' if product.only_one else 'false' }})">
-            Buy Now
-          </a>
-          {% else %}
-          <button class="btn btn-dark" disabled style="opacity:.5;cursor:not-allowed;">Sold — Unavailable</button>
-          {% endif %}
+          {% if product.stock > 0 %}
+          <button class="btn btn-gold" onclick="addToCart('{{ product.id }}','{{ product.name|replace("'","\\'") }}','{{ product.price }}','{{ images[0].id if images else "" }}',{{ 'true' if product.only_one else 'false' }})">Add to Selection</button>
+          <a href="{{ url_for('checkout') }}" class="btn btn-outline" onclick="addToCart('{{ product.id }}','{{ product.name|replace("'","\\'") }}','{{ product.price }}','{{ images[0].id if images else "" }}',{{ 'true' if product.only_one else 'false' }})">Buy Now</a>
+          {% else %}<button class="btn btn-dark" disabled style="opacity:.5;cursor:not-allowed;">Sold — Unavailable</button>{% endif %}
         </div>
-
         <div class="product-meta">
-          <div class="product-meta-item">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--gold)" stroke-width="1.5" style="flex-shrink:0;margin-top:2px;"><path d="M5 12h14"/><path d="M12 5l7 7-7 7"/></svg>
-            {% set min_ship = settings.get('free_shipping_min','2000')|int %}
-            {% if min_ship > 0 and product.price|float >= min_ship %}
-              <span><strong>Free shipping</strong> on this order</span>
-            {% elif min_ship > 0 %}
-              <span><strong>Free shipping</strong> on orders above {{ settings.get('currency_symbol','₹') }}{{ "{:,.0f}".format(min_ship) }}</span>
-            {% else %}
-              <span>Shipping calculated at checkout</span>
-            {% endif %}
-          </div>
-          <div class="product-meta-item">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--gold)" stroke-width="1.5" style="flex-shrink:0;margin-top:2px;"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
-            <span><strong>Premium craftsmanship</strong> — Authenticity guaranteed</span>
-          </div>
-          {% if product.only_one %}
-          <div class="product-meta-item">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--gold)" stroke-width="1.5" style="flex-shrink:0;margin-top:2px;"><polygon points="12,2 15.09,8.26 22,9.27 17,14.14 18.18,21.02 12,17.77 5.82,21.02 7,14.14 2,9.27 8.91,8.26"/></svg>
-            <span><strong>Exclusive rarity</strong> — This piece will never be recreated</span>
-          </div>
-          {% endif %}
-          {% if settings.get('whatsapp_number') %}
-          <div class="product-meta-item">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--gold)" stroke-width="1.5" style="flex-shrink:0;margin-top:2px;"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg>
-            <span>Questions? <a href="https://wa.me/{{ settings.whatsapp_number }}?text=Hi, I'm interested in {{ product.name }}" target="_blank" style="color:var(--gold);text-decoration:underline;">Chat on WhatsApp</a></span>
-          </div>
-          {% endif %}
+          <div class="product-meta-item"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--gold)" stroke-width="1.5" style="flex-shrink:0;margin-top:2px;"><path d="M5 12h14"/><path d="M12 5l7 7-7 7"/></svg><span><strong>Free shipping</strong> on orders above {{ settings.get('currency_symbol','₹') }}{{ settings.get('free_shipping_min','2000') }}</span></div>
+          <div class="product-meta-item"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--gold)" stroke-width="1.5" style="flex-shrink:0;margin-top:2px;"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg><span><strong>Premium craftsmanship</strong> — Authenticity guaranteed</span></div>
+          {% if product.only_one %}<div class="product-meta-item"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--gold)" stroke-width="1.5" style="flex-shrink:0;margin-top:2px;"><polygon points="12,2 15.09,8.26 22,9.27 17,14.14 18.18,21.02 12,17.77 5.82,21.02 7,14.14 2,9.27 8.91,8.26"/></svg><span><strong>Exclusive rarity</strong> — This piece will never be recreated</span></div>{% endif %}
+          {% if settings.get('whatsapp_number') %}<div class="product-meta-item"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--gold)" stroke-width="1.5" style="flex-shrink:0;margin-top:2px;"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg><span>Questions? <a href="https://wa.me/{{ settings.whatsapp_number }}?text=Hi, I'm interested in {{ product.name|urlencode }}" target="_blank" style="color:var(--gold);text-decoration:underline;">Chat on WhatsApp</a></span></div>{% endif %}
         </div>
       </div>
     </div>
@@ -110,107 +57,36 @@
     <!-- Reviews -->
     {% if settings.get('show_reviews','true')=='true' %}
     <div style="margin-top:80px;" class="reveal">
-      <div class="section-header">
-        <span class="label">Customer Reviews</span>
-        <h2>What they say</h2>
-        <div class="divider"></div>
-      </div>
-
+      <div class="section-header"><span class="label">Customer Reviews</span><h2>What they say</h2><div class="divider"></div></div>
       {% if reviews %}
       <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:24px;margin-bottom:48px;">
-        {% for r in reviews %}
-        <div style="background:var(--cream);padding:28px;border-radius:2px;">
-          <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:12px;">
-            <div style="font-weight:500;font-size:.88rem;">{{ r.customer_name }}</div>
-            <div style="color:var(--gold);font-size:.9rem;">{% for i in range(r.rating|int) %}★{% endfor %}</div>
-          </div>
-          <p style="font-size:.85rem;color:var(--gray-mid);line-height:1.7;font-style:italic;">"{{ r.comment }}"</p>
-          <div style="font-size:.65rem;color:var(--gray-light);margin-top:12px;">{{ r.created_at|string|truncate(10,True,'') }}</div>
-        </div>
-        {% endfor %}
+        {% for r in reviews %}<div style="background:var(--cream);padding:28px;border-radius:2px;"><div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:12px;"><div style="font-weight:500;font-size:.88rem;">{{ r.customer_name }}</div><div style="color:var(--gold);font-size:.9rem;">{% for i in range(r.rating) %}★{% endfor %}</div></div><p style="font-size:.85rem;color:var(--gray-mid);line-height:1.7;font-style:italic;">"{{ r.comment }}"</p><div style="font-size:.65rem;color:var(--gray-light);margin-top:12px;">{{ r.created_at|string|truncate(10,True,'') }}</div></div>{% endfor %}
       </div>
-      {% else %}
-      <p style="text-align:center;color:var(--gray-mid);font-size:.88rem;margin-bottom:40px;font-style:italic;">Be the first to review this piece.</p>
-      {% endif %}
-
+      {% else %}<p style="text-align:center;color:var(--gray-mid);font-size:.88rem;margin-bottom:40px;font-style:italic;">Be the first to review this piece.</p>{% endif %}
       <!-- Submit review -->
       <div style="max-width:560px;margin:0 auto;background:var(--cream);padding:32px;border-radius:2px;">
         <h3 style="font-family:var(--font-display);font-size:1.3rem;margin-bottom:24px;">Leave a Review</h3>
-        {% with messages = get_flashed_messages(with_categories=true) %}
-          {% if messages %}{% for cat,msg in messages %}
-            <div style="padding:10px 16px;background:{% if cat=='success' %}#e8f4e8{% else %}#fde8e8{% endif %};
-              color:{% if cat=='success' %}#2d7a2d{% else %}#c44{% endif %};border-radius:2px;font-size:.8rem;margin-bottom:16px;">{{ msg }}</div>
-          {% endfor %}{% endif %}
-        {% endwith %}
+        {% with messages=get_flashed_messages(with_categories=true) %}{% if messages %}{% for cat,msg in messages %}<div style="padding:10px 16px;background:{% if cat=='success' %}#e8f4e8{% else %}#fde8e8{% endif %};color:{% if cat=='success' %}#2d7a2d{% else %}#c44{% endif %};border-radius:2px;font-size:.8rem;margin-bottom:16px;">{{ msg }}</div>{% endfor %}{% endif %}{% endwith %}
         <form method="POST" action="{{ url_for('submit_review',pid=product.id) }}">
-          <div style="margin-bottom:16px;">
-            <label style="font-size:.6rem;letter-spacing:.12em;text-transform:uppercase;color:var(--gray-mid);display:block;margin-bottom:8px;">Rating</label>
-            <div style="display:flex;gap:6px;">
-              {% for i in [5,4,3,2,1] %}
-              <label style="cursor:pointer;">
-                <input type="radio" name="rating" value="{{ i }}" {% if i==5 %}checked{% endif %} style="display:none;"/>
-                <span class="star-btn" data-val="{{ i }}" style="font-size:1.4rem;color:{% if i==5 %}var(--gold){% else %}var(--beige){% endif %};transition:color .15s;cursor:pointer;">★</span>
-              </label>
-              {% endfor %}
-            </div>
-          </div>
-          <div style="margin-bottom:16px;">
-            <label style="font-size:.6rem;letter-spacing:.12em;text-transform:uppercase;color:var(--gray-mid);display:block;margin-bottom:8px;">Your Name</label>
-            <input type="text" name="name" required style="width:100%;padding:10px 14px;border:1px solid var(--beige);background:var(--white);font-family:'Raleway',sans-serif;font-size:.88rem;outline:none;border-radius:2px;" placeholder="Your name"/>
-          </div>
-          <div style="margin-bottom:20px;">
-            <label style="font-size:.6rem;letter-spacing:.12em;text-transform:uppercase;color:var(--gray-mid);display:block;margin-bottom:8px;">Your Review</label>
-            <textarea name="comment" required rows="4" style="width:100%;padding:10px 14px;border:1px solid var(--beige);background:var(--white);font-family:'Raleway',sans-serif;font-size:.88rem;outline:none;border-radius:2px;resize:vertical;" placeholder="Share your experience…"></textarea>
-          </div>
+          <div style="margin-bottom:16px;"><label style="font-size:.6rem;letter-spacing:.12em;text-transform:uppercase;color:var(--gray-mid);display:block;margin-bottom:8px;">Rating</label>
+          <div style="display:flex;gap:6px;flex-direction:row-reverse;justify-content:flex-end;">{% for i in [5,4,3,2,1] %}<label style="cursor:pointer;font-size:1.6rem;color:var(--beige);transition:color .15s;" onmouseover="this.style.color='var(--gold)'" onmouseout="this.style.color='var(--beige)'">★<input type="radio" name="rating" value="{{ i }}" {% if i==5 %}checked{% endif %} style="display:none;"/></label>{% endfor %}</div></div>
+          <div style="margin-bottom:16px;"><label style="font-size:.6rem;letter-spacing:.12em;text-transform:uppercase;color:var(--gray-mid);display:block;margin-bottom:8px;">Your Name</label><input type="text" name="name" required style="width:100%;padding:10px 14px;border:1px solid var(--beige);background:var(--white);font-family:'Raleway',sans-serif;font-size:.88rem;outline:none;border-radius:2px;" placeholder="Your name"/></div>
+          <div style="margin-bottom:20px;"><label style="font-size:.6rem;letter-spacing:.12em;text-transform:uppercase;color:var(--gray-mid);display:block;margin-bottom:8px;">Your Review</label><textarea name="comment" required rows="4" style="width:100%;padding:10px 14px;border:1px solid var(--beige);background:var(--white);font-family:'Raleway',sans-serif;font-size:.88rem;outline:none;border-radius:2px;resize:vertical;" placeholder="Share your experience…"></textarea></div>
           <button type="submit" class="btn btn-gold">Submit Review</button>
         </form>
       </div>
     </div>
     {% endif %}
 
-    <!-- Related products -->
+    <!-- Related -->
     {% if related %}
     <div style="margin-top:80px;">
       <div class="section-header reveal"><span class="label">You May Also Love</span><h2>Related Pieces</h2><div class="divider"></div></div>
       <div class="product-grid">
-        {% for rp in related %}
-        {% set ri = rp.images.split(',') if rp.images else [] %}
-        <div class="product-card reveal reveal-delay-{{ loop.index }}">
-          <a href="{{ url_for('product_detail',pid=rp.id) }}">
-            <div class="product-card-image">
-              {% if ri and ri[0] %}<img src="{{ url_for('uploaded_file',filename=ri[0]) }}" alt="{{ rp.name }}" loading="lazy"/>
-              {% else %}<div class="product-placeholder"><svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="0.8"><polygon points="12,2 15.09,8.26 22,9.27 17,14.14 18.18,21.02 12,17.77 5.82,21.02 7,14.14 2,9.27 8.91,8.26"/></svg></div>{% endif %}
-              {% if rp.only_one %}<div class="product-card-badge">One of a Kind</div>{% endif %}
-            </div>
-          </a>
-          <div class="product-card-info">
-            <div class="product-card-category">{{ rp.category }}</div>
-            <div class="product-card-name"><a href="{{ url_for('product_detail',pid=rp.id) }}" style="color:inherit;">{{ rp.name }}</a></div>
-            <div class="product-card-price">{{ settings.get('currency_symbol','₹') }}{{ "{:,.0f}".format(rp.price|float) }}</div>
-          </div>
-        </div>
-        {% endfor %}
+        {% for rp in related %}<div class="product-card reveal reveal-delay-{{ loop.index }}"><a href="{{ url_for('product_detail',pid=rp.id) }}"><div class="product-card-image">{% if rp.thumb %}<img src="{{ url_for('serve_product_image',img_id=rp.thumb) }}" alt="{{ rp.name }}" loading="lazy"/>{% else %}<div class="product-placeholder"><svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="0.8"><polygon points="12,2 15.09,8.26 22,9.27 17,14.14 18.18,21.02 12,17.77 5.82,21.02 7,14.14 2,9.27 8.91,8.26"/></svg></div>{% endif %}{% if rp.only_one %}<div class="product-card-badge">One of a Kind</div>{% endif %}</div></a><div class="product-card-info"><div class="product-card-category">{{ rp.category }}</div><div class="product-card-name"><a href="{{ url_for('product_detail',pid=rp.id) }}" style="color:inherit;">{{ rp.name }}</a></div><div class="product-card-price">{{ settings.get('currency_symbol','₹') }}{{ "{:,.0f}".format(rp.price) }}</div></div></div>{% endfor %}
       </div>
     </div>
     {% endif %}
   </div>
 </section>
-
-{% block extra_scripts %}
-<script>
-// Star rating interactive
-document.querySelectorAll('.star-btn').forEach(function(star) {
-  star.addEventListener('click', function() {
-    const val = parseInt(this.dataset.val);
-    document.querySelectorAll('.star-btn').forEach(function(s) {
-      s.style.color = parseInt(s.dataset.val) >= val ? 'var(--gold)' : 'var(--beige)';
-    });
-    // Set radio
-    document.querySelectorAll('[name="rating"]').forEach(function(r) {
-      r.checked = parseInt(r.value) === val;
-    });
-  });
-});
-</script>
-{% endblock %}
 {% endblock %}

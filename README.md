@@ -1,133 +1,129 @@
 # HENOSIS — Luxury Imitation Jewellery
 
-Full-stack luxury ecommerce with Flask + PostgreSQL (Render) / SQLite (local).
+Full-stack luxury ecommerce. Pure PostgreSQL on Render — all data including images stored in the database permanently.
 
 ---
 
-## 🚀 Quick Start (Local — SQLite)
+## 🚀 Local Development
 
 ```bash
 cd henosis
 python -m venv venv
-source venv/bin/activate   # Windows: venv\Scripts\activate
+source venv/bin/activate    # Windows: venv\Scripts\activate
 pip install -r requirements.txt
 python app.py
 ```
-→ http://localhost:5000  (uses SQLite automatically — no setup needed)
+→ http://localhost:5000  (SQLite auto-created in `data/henosis.db`)
 
 ---
 
-## ☁️ Deploy to Render (PostgreSQL — Persistent)
+## ☁️ Deploy to Render (Permanent PostgreSQL)
 
-1. Push to GitHub
+### One-click with Blueprint:
+1. Push this folder to a GitHub repo
 2. Go to **render.com** → New → **Blueprint**
-3. Connect your repo — Render reads `render.yaml` automatically
-4. It creates:
-   - A **Web Service** (your Flask app)
-   - A **PostgreSQL database** (free tier, persistent)
-   - Injects `DATABASE_URL` automatically
-5. Add env var: `ADMIN_PASSWORD_HASH` = SHA-256 hash of your password
-6. Deploy!
+3. Connect your repo (Render reads `render.yaml` automatically)
+4. Render creates:
+   - ✅ Web service (Flask app)
+   - ✅ PostgreSQL database (free tier, **persistent forever**)
+   - ✅ `DATABASE_URL` injected automatically
+5. Click **Deploy**
+6. After first deploy, update `ADMIN_PASSWORD_HASH` env var with your hashed password
 
-### How DATABASE_URL works
-| Environment | Database | Set by |
-|---|---|---|
-| Local dev | SQLite (`data/henosis.db`) | Auto (no config needed) |
-| Render | PostgreSQL | `render.yaml` → `fromDatabase` |
-| Railway | PostgreSQL | Add `DATABASE_URL` env var manually |
+### Manual deploy:
+1. New → Web Service → connect repo
+2. Build: `pip install -r requirements.txt`
+3. Start: `gunicorn app:app --bind 0.0.0.0:$PORT --workers 2 --timeout 120`
+4. Add env vars:
+   - `SECRET_KEY` → any random string (or use "Generate" button)
+   - `DATABASE_URL` → from a Render PostgreSQL database you create
+   - `ADMIN_EMAIL` → henosis4india@gmail.com
+   - `ADMIN_PASSWORD_HASH` → SHA-256 hash of your password
+
+### Generate password hash:
+```python
+import hashlib
+print(hashlib.sha256("YourPassword".encode()).hexdigest())
+```
 
 ---
 
 ## 🔐 Admin Access
 
-URL: `http://yoursite.com/henosis-admin`
-Or: **Click the footer logo 5 times quickly**
+**URL:** `https://yoursite.com/henosis-admin`
+**Or:** Click the footer logo **5 times quickly**
 
-| Field | Default |
+| | |
 |---|---|
 | Email | henosis4india@gmail.com |
-| Password | Henosis@2024 |
+| Default Password | Henosis@2024 |
 
-**Change password:** Admin → Change Password  
-Then set `ADMIN_PASSWORD_HASH` env var on Render to the new SHA-256 hash.
+Change password at: Admin → Change Password
 
 ---
 
-## ✨ Features
+## 🗄️ Why PostgreSQL is Permanent on Render
+
+Render's free PostgreSQL database:
+- Lives on dedicated managed infrastructure
+- **Not tied to your web service** — upgrading/redeploying your app never touches the DB
+- Your products, orders, customers, images all survive restarts, redeploys, and upgrades
+- Images stored as base64 directly in the DB — no S3, no filesystem, nothing to lose
+
+---
+
+## ✨ Feature List
 
 ### Store
 - Luxury homepage with hero, featured products, gallery, brand story
-- Shop with category filter, search, sort (price / newest)
-- Product detail with image gallery, reviews, related products
+- Shop with search, category filter, price sort
+- Product pages with image gallery, customer reviews, related items, WhatsApp link
 - Cart drawer + full cart page
 - Checkout with discount codes, order notes
-- WhatsApp chat button (configurable)
-- Welcome popup (configurable)
+- WhatsApp floating chat button
+- Welcome popup
 - Maintenance mode
 
-### Admin Panel (hidden at `/henosis-admin`)
-| Section | Features |
+### Admin Panel (`/henosis-admin` or 5× footer logo)
+| | |
 |---|---|
-| **Dashboard** | Revenue stats, recent orders, low stock alerts, revenue chart |
-| **Products** | Add/edit/delete/duplicate, image upload, One-of-a-Kind toggle |
-| **Orders** | Status filter, update status/payment, admin notes, CSV export, delete |
-| **Customers** | View all, total orders & spend, delete, CSV export |
-| **Discounts** | Create codes (% or flat), usage limits, enable/disable/delete |
+| **Dashboard** | Revenue, orders, low stock alert, 7-day revenue chart |
+| **Products** | Add/Edit/Delete/Duplicate, multi-image upload (stored in DB) |
+| **Orders** | Filter by status, update status & payment, admin notes, CSV export, delete |
+| **Customers** | View all, spend stats, delete, CSV export |
+| **Discounts** | Create % or flat codes, usage limits, enable/disable |
 | **Reviews** | Approve/delete customer reviews |
-| **Analytics** | Revenue chart, order status breakdown, category sales, top customers |
-| **Settings** | 7-tab settings: Brand, Hero, Banner, Shop, Colors, SEO, Advanced |
-| **Change Password** | Secure password update |
+| **Analytics** | Monthly revenue chart, order breakdown, category sales, top customers |
+| **Settings (7 tabs)** | Brand, Hero, Banner, Shop, Colors, SEO, Advanced |
+| **Change Password** | Secure in-app password update |
 
-### Settings Tabs
-- **Brand** — Logo (text or image), footer text, contact info, social links, WhatsApp
-- **Hero** — Tagline, subtext, background image, live preview
-- **Banner** — Announcement bar text, show/hide toggle
-- **Shop** — Currency symbol, free shipping threshold, low stock alert, show reviews
-- **Colors** — Primary gold + accent champagne color pickers
-- **SEO** — Meta title, meta description, Google Analytics ID
-- **Advanced** — Maintenance mode, welcome popup (title, text, CTA)
+### Settings
+- **Brand** — Logo (image or text), footer, contact, social links, WhatsApp
+- **Hero** — Tagline, subtext, background image (all stored in DB)
+- **Banner** — Announcement bar, show/hide
+- **Shop** — Currency symbol, free shipping threshold, low stock alert, reviews on/off
+- **Colors** — Primary gold + accent color pickers
+- **SEO** — Meta title, description, Google Analytics ID
+- **Advanced** — Maintenance mode, welcome popup
 
 ---
 
-## 📁 Project Structure
+## 📁 Structure
 
 ```
 henosis/
-├── app.py              # Flask routes + logic
-├── db.py               # PostgreSQL/SQLite abstraction layer
-├── requirements.txt    # Dependencies
-├── Procfile            # Gunicorn start command
-├── render.yaml         # Render Blueprint (app + DB)
-├── runtime.txt         # Python 3.11
-├── data/               # SQLite DB (local dev only)
-│   └── henosis.db
+├── app.py          # All Flask routes
+├── db.py           # PostgreSQL/SQLite abstraction + image storage
+├── requirements.txt
+├── Procfile
+├── render.yaml     # Render Blueprint (auto-creates DB)
+├── runtime.txt
 ├── static/
-│   ├── css/main.css    # Full luxury design system
-│   ├── js/main.js      # Cart, animations, interactions
-│   └── uploads/        # Product & logo images
+│   ├── css/main.css
+│   └── js/main.js
 └── templates/
-    ├── base.html        # Nav, footer, cart drawer, popups
-    ├── index.html       # Homepage
-    ├── shop.html        # Product listing
-    ├── product.html     # Product detail + reviews
-    ├── cart.html        # Cart page
-    ├── checkout.html    # Checkout + discount codes
-    ├── order_success.html
-    ├── about.html
-    ├── maintenance.html
-    └── admin/           # All admin templates
+    ├── base.html, index.html, shop.html, product.html
+    ├── cart.html, checkout.html, order_success.html
+    ├── about.html, maintenance.html
+    └── admin/  (10 templates)
 ```
-
----
-
-## 🔒 Security
-
-- Admin route hidden (not linked publicly)
-- Password SHA-256 hashed
-- Flask session-based auth
-- Protected admin routes via decorator
-- Set `SECRET_KEY` env var in production (auto-generated on Render via `generateValue: true`)
-
----
-
-Made with ♥ for Henosis — *Crafted to stand alone.*

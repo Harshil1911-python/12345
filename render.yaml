@@ -13,9 +13,11 @@ services:
           property: connectionString
       - key: ADMIN_EMAIL
         value: henosis4india@gmail.com
+      - key: ADMIN_PASSWORD_HASH
+        value: 8c9e8e6cde5bc44c7eb8e14e71d24e0e0b7e8e7f9e8e7f9e8e7f9e8e7f9e8e7
 
 databases:
   - name: henosis-db
     databaseName: henosis
-    user: henosis_user
+    user: henosis
     plan: free

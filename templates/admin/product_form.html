@@ -1,16 +1,15 @@
 {% extends "admin/base.html" %}
 {% block page_title %}{{ 'Edit Product' if product else 'Add Product' }}{% endblock %}
 {% block content %}
-
 <div class="page-actions">
   <div class="page-title">{{ 'Edit: ' + product.name if product else 'New Product' }}</div>
   <a href="{{ url_for('admin_products') }}" class="btn btn-outline">← Back</a>
 </div>
 
 <form method="POST" enctype="multipart/form-data">
-  <div style="display:grid;grid-template-columns:1fr 360px;gap:20px;align-items:start;">
+  <div style="display:grid;grid-template-columns:1fr 340px;gap:20px;align-items:start;">
 
-    <!-- Main fields -->
+    <!-- Main -->
     <div style="display:flex;flex-direction:column;gap:16px;">
       <div class="card">
         <div class="card-title">Product Details</div>
@@ -21,114 +20,87 @@
         <div class="form-grid">
           <div class="form-group">
             <label>Price (₹) *</label>
-            <input type="number" name="price" required step="0.01" min="0"
-                   value="{{ product.price if product else '' }}" placeholder="1299.00"/>
+            <input type="number" name="price" required step="0.01" min="0" value="{{ product.price if product else '' }}" placeholder="1299.00"/>
           </div>
           <div class="form-group">
-            <label>Stock Quantity *</label>
-            <input type="number" name="stock" required min="0"
-                   value="{{ product.stock if product else '1' }}"/>
+            <label>Stock Qty *</label>
+            <input type="number" name="stock" required min="0" value="{{ product.stock if product else '1' }}"/>
           </div>
           <div class="form-group">
             <label>Category *</label>
-            <input type="text" name="category" required
-                   value="{{ product.category if product else '' }}"
-                   placeholder="Necklaces" list="cat-list"/>
-            <datalist id="cat-list">
-              {% for cat in ['Necklaces','Rings','Earrings','Bracelets','Anklets','Sets','Bangles','Pendants'] %}
-              <option value="{{ cat }}"/>{% endfor %}
-            </datalist>
+            <input type="text" name="category" required value="{{ product.category if product else '' }}" placeholder="Necklaces" list="cat-list"/>
+            <datalist id="cat-list">{% for cat in ['Necklaces','Rings','Earrings','Bracelets','Anklets','Sets','Bangles','Pendants'] %}<option value="{{ cat }}"/>{% endfor %}</datalist>
           </div>
         </div>
         <div class="form-group">
           <label>Description *</label>
-          <textarea name="description" required rows="5"
-                    placeholder="Describe the piece — materials, inspiration, craftsmanship...">{{ product.description if product else '' }}</textarea>
+          <textarea name="description" required rows="5" placeholder="Describe the piece — materials, inspiration, craftsmanship...">{{ product.description if product else '' }}</textarea>
         </div>
       </div>
 
       <!-- Images -->
       <div class="card">
         <div class="card-title">Product Images</div>
-        <input type="file" name="images" accept="image/*" multiple
-               style="padding:10px;background:var(--white);border:1px dashed var(--beige);border-radius:2px;width:100%;cursor:pointer;"/>
-        <p class="form-hint">Upload multiple images. First image = primary display. Supported: JPG, PNG, WebP.</p>
-        {% if product and product.images %}
-        {% set imgs = product.images.split(',') %}
-        <div style="display:flex;flex-wrap:wrap;gap:8px;margin-top:14px;">
-          {% for img in imgs %}{% if img %}
-          <div style="position:relative;">
-            <img src="/uploads/{{ img }}" style="width:80px;height:80px;object-fit:cover;border-radius:2px;border:1px solid var(--beige);"/>
-            <label style="position:absolute;top:3px;right:3px;background:rgba(204,68,68,.85);color:white;
-              width:18px;height:18px;border-radius:50%;display:flex;align-items:center;justify-content:center;
-              font-size:.7rem;cursor:pointer;" title="Delete image">
-              <input type="checkbox" name="delete_image" value="{{ img }}" style="display:none;"/>×
-            </label>
+        <input type="file" name="images" accept="image/*" multiple style="padding:10px;background:var(--white);border:1px dashed var(--beige);border-radius:2px;width:100%;cursor:pointer;"/>
+        <p class="form-hint">Images are stored directly in the database — no filesystem needed. Supported: JPG, PNG, WebP, GIF. First image = primary thumbnail.</p>
+
+        {% if images %}
+        <div style="display:flex;flex-wrap:wrap;gap:10px;margin-top:16px;">
+          {% for img in images %}
+          <div style="position:relative;width:90px;height:90px;">
+            <img src="{{ url_for('serve_product_image', img_id=img.id) }}" style="width:100%;height:100%;object-fit:cover;border-radius:2px;border:1px solid var(--beige);"/>
+            <label style="position:absolute;top:4px;right:4px;width:20px;height:20px;background:rgba(204,68,68,.9);color:white;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:.75rem;cursor:pointer;user-select:none;" title="Delete this image" onclick="markDelete(this,'{{ img.id }}')">×</label>
+            <input type="checkbox" name="delete_image" value="{{ img.id }}" style="display:none;" id="del_{{ img.id }}"/>
           </div>
-          {% endif %}{% endfor %}
+          {% endfor %}
         </div>
-        <p class="form-hint" style="color:#c44;">Click × on an image to mark it for deletion on save.</p>
+        <p class="form-hint" style="color:#c44;margin-top:8px;">Click × to mark an image for deletion on save.</p>
         {% endif %}
       </div>
     </div>
 
-    <!-- Sidebar options -->
+    <!-- Sidebar -->
     <div style="display:flex;flex-direction:column;gap:16px;">
       <div class="card">
         <div class="card-title">Visibility & Tags</div>
-        <label class="form-check" style="margin-bottom:16px;padding:14px;background:var(--cream);border-radius:2px;">
-          <input type="checkbox" name="only_one"
-            {% if product and product.only_one_str=='true' %}checked{% endif %}/>
-          <span>
-            <strong>One of a Kind</strong><br>
-            <span style="font-size:.72rem;color:var(--gray-mid);font-weight:400;">This piece exists only once in the world</span>
-          </span>
+        <label class="form-check" style="margin-bottom:14px;padding:14px;background:var(--cream);border-radius:2px;">
+          <input type="checkbox" name="only_one" {% if product and product.only_one_str=='true' %}checked{% endif %}/>
+          <span><strong>One of a Kind</strong><br><span style="font-size:.7rem;color:var(--gray-mid);font-weight:400;">Exists only once in the world</span></span>
         </label>
         <label class="form-check" style="padding:14px;background:var(--cream);border-radius:2px;">
-          <input type="checkbox" name="featured"
-            {% if product and product.featured_str=='true' %}checked{% endif %}/>
-          <span>
-            <strong>Featured on Homepage</strong><br>
-            <span style="font-size:.72rem;color:var(--gray-mid);font-weight:400;">Show in the featured section</span>
-          </span>
+          <input type="checkbox" name="featured" {% if product and product.featured_str=='true' %}checked{% endif %}/>
+          <span><strong>Featured on Homepage</strong><br><span style="font-size:.7rem;color:var(--gray-mid);font-weight:400;">Show in featured section</span></span>
         </label>
       </div>
 
       <div class="card" style="background:var(--charcoal);">
-        <div style="font-size:.6rem;letter-spacing:.15em;text-transform:uppercase;color:var(--champagne);margin-bottom:12px;">Preview</div>
-        <div style="font-size:.6rem;letter-spacing:.15em;text-transform:uppercase;color:rgba(250,248,244,.4);margin-bottom:6px;" id="prevCat">Category</div>
+        <div style="font-size:.58rem;letter-spacing:.15em;text-transform:uppercase;color:var(--champagne);margin-bottom:12px;">Live Preview</div>
+        <div style="font-size:.58rem;letter-spacing:.15em;text-transform:uppercase;color:rgba(250,248,244,.4);margin-bottom:5px;" id="prevCat">Category</div>
         <div style="font-family:'Cormorant Garamond',serif;font-size:1.2rem;color:var(--ivory);margin-bottom:6px;" id="prevName">Product Name</div>
         <div style="font-size:.9rem;color:var(--champagne);" id="prevPrice">₹0</div>
       </div>
 
-      <div style="display:flex;flex-direction:column;gap:8px;">
-        <button type="submit" class="btn btn-gold btn-full">{{ 'Save Changes' if product else 'Add Product' }}</button>
-        <a href="{{ url_for('admin_products') }}" class="btn btn-outline btn-full">Cancel</a>
-      </div>
+      <button type="submit" class="btn btn-gold btn-full">{{ 'Save Changes' if product else 'Add Product' }}</button>
+      <a href="{{ url_for('admin_products') }}" class="btn btn-outline btn-full">Cancel</a>
     </div>
   </div>
 </form>
 
 <script>
-  function updatePreview() {
-    document.getElementById('prevName').textContent = document.querySelector('[name=name]').value || 'Product Name';
-    document.getElementById('prevCat').textContent  = document.querySelector('[name=category]').value || 'Category';
-    const price = parseFloat(document.querySelector('[name=price]').value) || 0;
-    document.getElementById('prevPrice').textContent = '₹' + price.toLocaleString('en-IN');
-  }
-  ['name','category','price'].forEach(n => {
-    const el = document.querySelector('[name='+n+']');
-    if (el) el.addEventListener('input', updatePreview);
-  });
-  updatePreview();
-  // Image delete checkboxes toggle visual
-  document.querySelectorAll('[name=delete_image]').forEach(cb => {
-    cb.closest('div').querySelector('label').addEventListener('click', function() {
-      const img = this.closest('div').querySelector('img');
-      cb.checked = !cb.checked;
-      img.style.opacity = cb.checked ? '0.3' : '1';
-      this.style.background = cb.checked ? 'rgba(204,68,68,1)' : 'rgba(204,68,68,.85)';
-    });
-  });
+function markDelete(lbl, imgId) {
+  const cb = document.getElementById('del_'+imgId);
+  cb.checked = !cb.checked;
+  const img = lbl.closest('div').querySelector('img');
+  img.style.opacity = cb.checked ? '0.25' : '1';
+  lbl.style.background = cb.checked ? 'rgba(204,68,68,1)' : 'rgba(204,68,68,.9)';
+}
+function updatePreview() {
+  document.getElementById('prevName').textContent = document.querySelector('[name=name]').value || 'Product Name';
+  document.getElementById('prevCat').textContent  = document.querySelector('[name=category]').value || 'Category';
+  const p = parseFloat(document.querySelector('[name=price]').value)||0;
+  document.getElementById('prevPrice').textContent = '₹'+p.toLocaleString('en-IN');
+}
+['name','category','price'].forEach(n=>{const el=document.querySelector('[name='+n+']');if(el)el.addEventListener('input',updatePreview);});
+updatePreview();
 </script>
 {% endblock %}
