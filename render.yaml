@@ -1,9 +1,15 @@
+# ─────────────────────────────────────────────────────────────────────────────
+# Henosis — Render Blueprint
+# Auto-creates: Flask web service + free persistent PostgreSQL database
+# ─────────────────────────────────────────────────────────────────────────────
 services:
   - type: web
     name: henosis
     env: python
+    region: oregon
+    plan: free
     buildCommand: pip install -r requirements.txt
-    startCommand: gunicorn app:app --bind 0.0.0.0:$PORT --workers 2 --timeout 120
+    startCommand: gunicorn app:app --bind 0.0.0.0:$PORT --workers 1 --threads 4 --timeout 120 --preload
     envVars:
       - key: SECRET_KEY
         generateValue: true
@@ -14,10 +20,12 @@ services:
       - key: ADMIN_EMAIL
         value: henosis4india@gmail.com
       - key: ADMIN_PASSWORD_HASH
-        value: 8c9e8e6cde5bc44c7eb8e14e71d24e0e0b7e8e7f9e8e7f9e8e7f9e8e7f9e8e7
+        value: 9a70f560d8413b1fd597b685c2a1a75e4a9a3406d6543d38d45498c92b01428e
+      - key: PYTHON_VERSION
+        value: "3.11.0"
 
 databases:
   - name: henosis-db
     databaseName: henosis
-    user: henosis
+    user: henosis_user
     plan: free

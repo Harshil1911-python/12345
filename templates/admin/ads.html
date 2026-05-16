@@ -1,0 +1,233 @@
+{% extends "admin/base.html" %}
+{% block page_title %}Ad Banners{% endblock %}
+{% block content %}
+
+<div class="page-actions">
+  <div class="page-title">Ad Banners ({{ ads|length }})</div>
+  <button onclick="document.getElementById('adFormCard').style.display='block';this.style.display='none'" class="btn btn-gold">+ New Ad</button>
+</div>
+
+<!-- Create / Edit Form -->
+<div class="card" id="adFormCard" style="display:none;margin-bottom:20px;">
+  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;padding-bottom:12px;border-bottom:1px solid var(--beige);">
+    <span id="adFormTitle" style="font-family:var(--font-display);font-size:1.1rem;">New Ad</span>
+    <button onclick="resetAdForm()" class="btn btn-outline btn-sm">Cancel</button>
+  </div>
+  <form method="POST" action="{{ url_for('admin_save_ad') }}" enctype="multipart/form-data" id="adForm">
+    <input type="hidden" name="id" id="adId"/>
+    <input type="hidden" name="existing_image_key" id="existingImageKey"/>
+    <div class="form-grid">
+      <div class="form-group">
+        <label>Ad Name (internal) *</label>
+        <input type="text" name="name" id="adName" required placeholder="e.g. Summer Sale Banner"/>
+      </div>
+      <div class="form-group">
+        <label>Ad Type</label>
+        <select name="type" id="adType" onchange="toggleAdFields()">
+          <option value="announcement">Announcement Bar (top strip)</option>
+          <option value="banner">Full Banner (between sections)</option>
+          <option value="popup">Popup Overlay</option>
+          <option value="sidebar">Sidebar Card</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label>Position / Placement</label>
+        <select name="position" id="adPosition">
+          <option value="top">Top of every page</option>
+          <option value="hero_below">Below hero section</option>
+          <option value="shop_top">Top of shop page</option>
+          <option value="shop_mid">Mid-shop (after 4 products)</option>
+          <option value="product_below">Below product description</option>
+          <option value="cart">Cart page</option>
+          <option value="checkout">Checkout page</option>
+          <option value="footer_above">Above footer</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label>Sort Order</label>
+        <input type="number" name="sort_order" id="adOrder" value="0" min="0"/>
+        <p class="form-hint">Lower number = shown first when multiple ads in same position.</p>
+      </div>
+
+      <!-- Text Ad fields -->
+      <div class="form-group form-full" id="textFields">
+        <label>Ad Text / HTML Content</label>
+        <textarea name="content" id="adContent" rows="3" placeholder="e.g. 🎉 Use code SAVE10 for 10% off · Free shipping above ₹2000"></textarea>
+      </div>
+      <div class="form-group" id="linkField">
+        <label>Link URL (optional)</label>
+        <input type="text" name="link_url" id="adLinkUrl" placeholder="https://... or /shop"/>
+      </div>
+      <div class="form-group" id="linkTextField">
+        <label>Link Button Text</label>
+        <input type="text" name="link_text" id="adLinkText" placeholder="e.g. Shop Now"/>
+      </div>
+      <div class="form-group">
+        <label>Background Color</label>
+        <div style="display:flex;align-items:center;gap:10px;">
+          <input type="color" name="bg_color" id="adBgColor" value="#1a1a1a" style="width:48px;height:36px;padding:2px;border:1px solid var(--beige);border-radius:2px;cursor:pointer;"/>
+          <input type="text" id="bgHex" value="#1a1a1a" style="font-family:monospace;max-width:100px;" oninput="document.getElementById('adBgColor').value=this.value"/>
+        </div>
+      </div>
+      <div class="form-group">
+        <label>Text Color</label>
+        <div style="display:flex;align-items:center;gap:10px;">
+          <input type="color" name="text_color" id="adTextColor" value="#faf8f4" style="width:48px;height:36px;padding:2px;border:1px solid var(--beige);border-radius:2px;cursor:pointer;"/>
+          <input type="text" id="textHex" value="#faf8f4" style="font-family:monospace;max-width:100px;" oninput="document.getElementById('adTextColor').value=this.value"/>
+        </div>
+      </div>
+
+      <!-- Image Ad field -->
+      <div class="form-group form-full" id="imageField" style="display:none;">
+        <label>Ad Image (for banner/popup type)</label>
+        <input type="file" name="ad_image" accept="image/*" style="padding:10px;background:var(--white);border:1px dashed var(--beige);border-radius:2px;width:100%;"/>
+        <p class="form-hint">Image stored in database — permanent across deploys. Recommended: 1200×400px for banner, 600×600px for popup.</p>
+        <div id="currentAdImage" style="margin-top:10px;display:none;">
+          <img id="currentAdImageEl" style="max-height:80px;border:1px solid var(--beige);border-radius:2px;"/>
+        </div>
+      </div>
+
+      <!-- Scheduling -->
+      <div class="form-group">
+        <label>Start Date (optional)</label>
+        <input type="date" name="start_date" id="adStartDate"/>
+        <p class="form-hint">Leave blank to show immediately.</p>
+      </div>
+      <div class="form-group">
+        <label>End Date (optional)</label>
+        <input type="date" name="end_date" id="adEndDate"/>
+        <p class="form-hint">Leave blank to run indefinitely.</p>
+      </div>
+    </div>
+
+    <!-- Live Preview -->
+    <div style="margin:16px 0;padding:16px;background:var(--cream);border-radius:2px;">
+      <div style="font-size:.6rem;letter-spacing:.15em;text-transform:uppercase;color:var(--gray-mid);margin-bottom:10px;">Live Preview</div>
+      <div id="adPreview" style="padding:12px 20px;text-align:center;border-radius:2px;font-family:'Raleway',sans-serif;font-size:.78rem;letter-spacing:.08em;transition:all .3s;background:#1a1a1a;color:#faf8f4;">
+        Your ad preview appears here as you type…
+      </div>
+    </div>
+
+    <label class="form-check" style="margin-bottom:20px;">
+      <input type="checkbox" name="active" id="adActive" checked/>
+      <span>Active (visible on website)</span>
+    </label>
+
+    <div style="display:flex;gap:10px;">
+      <button type="submit" class="btn btn-gold">Save Ad</button>
+      <button type="button" onclick="resetAdForm()" class="btn btn-outline">Cancel</button>
+    </div>
+  </form>
+</div>
+
+<!-- Ads List -->
+{% if ads %}
+<div style="display:flex;flex-direction:column;gap:12px;">
+  {% for ad in ads %}
+  <div class="card" style="{% if not ad.active %}opacity:.6;{% endif %}">
+    <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:16px;flex-wrap:wrap;">
+      <div style="flex:1;">
+        <!-- Mini preview -->
+        <div style="padding:10px 16px;border-radius:2px;margin-bottom:12px;font-family:'Raleway',sans-serif;font-size:.75rem;max-width:500px;
+          background:{{ ad.bg_color }};color:{{ ad.text_color }};">
+          {% if ad.image_key %}
+            <img src="{{ url_for('serve_image',key=ad.image_key) }}" style="max-height:60px;max-width:100%;border-radius:2px;"/>
+          {% else %}
+            {{ ad.content or ad.name }}
+            {% if ad.link_text %} <strong>{{ ad.link_text }} →</strong>{% endif %}
+          {% endif %}
+        </div>
+        <div style="display:flex;flex-wrap:wrap;gap:8px;align-items:center;">
+          <span style="font-weight:500;font-size:.85rem;">{{ ad.name }}</span>
+          <span class="badge badge-gray">{{ ad.type }}</span>
+          <span class="badge badge-gold">{{ ad.position }}</span>
+          {% if ad.active %}<span class="badge badge-success">Active</span>
+          {% else %}<span class="badge badge-danger">Inactive</span>{% endif %}
+          {% if ad.start_date or ad.end_date %}
+          <span style="font-size:.7rem;color:var(--gray-mid);">{{ ad.start_date or '∞' }} → {{ ad.end_date or '∞' }}</span>
+          {% endif %}
+        </div>
+      </div>
+      <div style="display:flex;gap:6px;flex-shrink:0;">
+        <button onclick="editAd('{{ ad.id }}','{{ ad.name }}','{{ ad.type }}','{{ ad.position }}','{{ ad.content|replace("'","\\'") }}','{{ ad.link_url }}','{{ ad.link_text }}','{{ ad.bg_color }}','{{ ad.text_color }}','{{ ad.sort_order }}','{{ ad.start_date }}','{{ ad.end_date }}','{{ ad.image_key }}')" class="btn btn-outline btn-sm">Edit</button>
+        <form method="POST" action="{{ url_for('admin_toggle_ad',aid=ad.id) }}">
+          <button type="submit" class="btn btn-outline btn-sm">{{ 'Disable' if ad.active else 'Enable' }}</button>
+        </form>
+        <form method="POST" action="{{ url_for('admin_delete_ad',aid=ad.id) }}" onsubmit="return confirm('Delete this ad?')">
+          <button type="submit" class="btn btn-danger btn-sm">Del</button>
+        </form>
+      </div>
+    </div>
+  </div>
+  {% endfor %}
+</div>
+{% else %}
+<div class="card" style="text-align:center;padding:60px;">
+  <div style="font-size:2rem;margin-bottom:12px;">📢</div>
+  <p style="font-size:.88rem;color:var(--gray-mid);margin-bottom:20px;">No ads yet. Create your first banner or announcement.</p>
+  <button onclick="document.getElementById('adFormCard').style.display='block'" class="btn btn-gold">Create First Ad</button>
+</div>
+{% endif %}
+
+<script>
+document.getElementById('adBgColor').addEventListener('input',function(){document.getElementById('bgHex').value=this.value;updatePreview();});
+document.getElementById('adTextColor').addEventListener('input',function(){document.getElementById('textHex').value=this.value;updatePreview();});
+document.getElementById('adContent').addEventListener('input',updatePreview);
+document.getElementById('adLinkText').addEventListener('input',updatePreview);
+
+function updatePreview(){
+  const p   = document.getElementById('adPreview');
+  const bg  = document.getElementById('adBgColor').value;
+  const col = document.getElementById('adTextColor').value;
+  const txt = document.getElementById('adContent').value || 'Your ad text here…';
+  const lnk = document.getElementById('adLinkText').value;
+  p.style.background = bg; p.style.color = col;
+  p.innerHTML = txt + (lnk ? ` <strong>${lnk} →</strong>` : '');
+}
+
+function toggleAdFields(){
+  const type = document.getElementById('adType').value;
+  const isImage = ['banner','popup'].includes(type);
+  document.getElementById('imageField').style.display = isImage ? 'block' : 'none';
+}
+
+function resetAdForm(){
+  document.getElementById('adForm').reset();
+  document.getElementById('adId').value='';
+  document.getElementById('existingImageKey').value='';
+  document.getElementById('adFormTitle').textContent='New Ad';
+  document.getElementById('adFormCard').style.display='none';
+  document.querySelector('.page-actions .btn-gold').style.display='inline-flex';
+  document.getElementById('currentAdImage').style.display='none';
+  updatePreview();
+}
+
+function editAd(id,name,type,position,content,linkUrl,linkText,bgColor,textColor,sortOrder,startDate,endDate,imageKey){
+  document.getElementById('adId').value=id;
+  document.getElementById('adName').value=name;
+  document.getElementById('adType').value=type;
+  document.getElementById('adPosition').value=position;
+  document.getElementById('adContent').value=content;
+  document.getElementById('adLinkUrl').value=linkUrl;
+  document.getElementById('adLinkText').value=linkText;
+  document.getElementById('adBgColor').value=bgColor;
+  document.getElementById('bgHex').value=bgColor;
+  document.getElementById('adTextColor').value=textColor;
+  document.getElementById('textHex').value=textColor;
+  document.getElementById('adOrder').value=sortOrder;
+  document.getElementById('adStartDate').value=startDate;
+  document.getElementById('adEndDate').value=endDate;
+  document.getElementById('existingImageKey').value=imageKey;
+  if(imageKey){
+    document.getElementById('currentAdImage').style.display='block';
+    document.getElementById('currentAdImageEl').src='/img/'+imageKey;
+  }
+  document.getElementById('adFormTitle').textContent='Edit: '+name;
+  document.getElementById('adFormCard').style.display='block';
+  document.querySelector('.page-actions .btn-gold').style.display='none';
+  toggleAdFields(); updatePreview();
+  document.getElementById('adFormCard').scrollIntoView({behavior:'smooth'});
+}
+toggleAdFields(); updatePreview();
+</script>
+{% endblock %}

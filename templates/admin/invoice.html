@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<title>Invoice #{{ order.id }} — {{ settings.get('logo_text','HENOSIS') }}</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;500&family=Raleway:wght@300;400;500;600&display=swap');
+  *{margin:0;padding:0;box-sizing:border-box;}
+  body{font-family:'Raleway',sans-serif;font-size:13px;color:#1a1a1a;background:#fff;padding:40px;}
+  .invoice-wrap{max-width:700px;margin:0 auto;}
+  .top{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:40px;padding-bottom:24px;border-bottom:2px solid #0e0e0e;}
+  .brand{font-family:'Cormorant Garamond',serif;font-size:28px;letter-spacing:.18em;color:#0e0e0e;}
+  .brand-sub{font-size:10px;letter-spacing:.2em;text-transform:uppercase;color:#9e9690;margin-top:4px;}
+  .inv-title{text-align:right;}
+  .inv-title h1{font-family:'Cormorant Garamond',serif;font-size:22px;font-weight:400;color:#b8965a;}
+  .inv-title p{font-size:11px;color:#6b6360;margin-top:3px;}
+  .two-col{display:grid;grid-template-columns:1fr 1fr;gap:32px;margin-bottom:32px;}
+  .section-label{font-size:9px;letter-spacing:.18em;text-transform:uppercase;color:#9e9690;margin-bottom:8px;}
+  .info-line{font-size:13px;margin-bottom:3px;color:#1a1a1a;}
+  table{width:100%;border-collapse:collapse;margin-bottom:24px;}
+  th{font-size:9px;letter-spacing:.15em;text-transform:uppercase;color:#9e9690;padding:8px 0;border-bottom:1px solid #e8ddd0;text-align:left;}
+  td{padding:12px 0;border-bottom:1px solid #f5f0e8;font-size:13px;vertical-align:top;}
+  .total-row{display:flex;justify-content:space-between;padding:6px 0;}
+  .total-row.grand{padding-top:12px;border-top:1px solid #0e0e0e;font-size:15px;font-family:'Cormorant Garamond',serif;}
+  .gold{color:#b8965a;}
+  .footer{margin-top:40px;padding-top:20px;border-top:1px solid #e8ddd0;font-size:11px;color:#9e9690;text-align:center;line-height:1.8;}
+  @media print{
+    body{padding:20px;}
+    .no-print{display:none!important;}
+    @page{margin:15mm;}
+  }
+</style>
+</head>
+<body>
+<div class="invoice-wrap">
+
+  <!-- Print / Back buttons -->
+  <div class="no-print" style="margin-bottom:24px;display:flex;gap:10px;">
+    <button onclick="window.print()" style="padding:10px 24px;background:#1a1a1a;color:#faf8f4;border:none;cursor:pointer;font-family:'Raleway',sans-serif;font-size:11px;letter-spacing:.12em;text-transform:uppercase;">Print / Save PDF</button>
+    <a href="javascript:history.back()" style="padding:10px 24px;border:1px solid #e8ddd0;color:#6b6360;font-size:11px;letter-spacing:.12em;text-transform:uppercase;text-decoration:none;">← Back</a>
+  </div>
+
+  <!-- Header -->
+  <div class="top">
+    <div>
+      <div class="brand">{{ settings.get('logo_text','HENOSIS') }}</div>
+      <div class="brand-sub">Luxury Imitation Jewellery</div>
+      {% if settings.get('contact_email') %}
+      <div style="font-size:11px;color:#9e9690;margin-top:8px;">{{ settings.get('contact_email') }}</div>
+      {% endif %}
+      {% if settings.get('contact_phone') %}
+      <div style="font-size:11px;color:#9e9690;">{{ settings.get('contact_phone') }}</div>
+      {% endif %}
+    </div>
+    <div class="inv-title">
+      <h1>INVOICE</h1>
+      <p style="font-size:13px;margin-top:6px;">#{{ order.id }}</p>
+      <p>{{ order.created_at|string|truncate(10,True,'') }}</p>
+      <div style="margin-top:12px;">
+        {% if order.payment_status=='Paid' %}
+        <span style="background:#e8f4e8;color:#2d7a2d;padding:4px 12px;font-size:10px;letter-spacing:.1em;text-transform:uppercase;">Paid</span>
+        {% else %}
+        <span style="background:#fef3cd;color:#856404;padding:4px 12px;font-size:10px;letter-spacing:.1em;text-transform:uppercase;">{{ order.payment_status }}</span>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+
+  <!-- Bill To -->
+  <div class="two-col">
+    <div>
+      <div class="section-label">Bill To</div>
+      <div class="info-line" style="font-weight:500;">{{ order.customer_name }}</div>
+      <div class="info-line" style="color:#6b6360;">{{ order.email }}</div>
+      <div class="info-line" style="color:#6b6360;">{{ order.phone }}</div>
+    </div>
+    <div>
+      <div class="section-label">Ship To</div>
+      <div class="info-line">{{ order.address }}</div>
+      <div class="info-line">{{ order.city }}{% if order.pincode %} — {{ order.pincode }}{% endif %}</div>
+    </div>
+  </div>
+
+  <!-- Items -->
+  <table>
+    <thead><tr><th>Item</th><th style="text-align:right;">Amount</th></tr></thead>
+    <tbody>
+      {% for item in (order["items"] or "").split(' | ') %}
+      {% if item.strip() %}
+      <tr>
+        <td>{{ item.strip() }}</td>
+        <td style="text-align:right;">
+          {% set parts = item.split('@₹') %}
+          {% if parts|length > 1 %}
+            {% set price_qty = parts[0].strip().split(' x') %}
+            {% if price_qty|length > 1 %}
+              ₹{{ "{:,.0f}".format((parts[1]|float) * (price_qty[1]|float)) }}
+            {% else %}
+              ₹{{ parts[1] }}
+            {% endif %}
+          {% endif %}
+        </td>
+      </tr>
+      {% endif %}
+      {% endfor %}
+    </tbody>
+  </table>
+
+  <!-- Totals -->
+  <div style="margin-left:auto;width:260px;">
+    {% if order.subtotal|float != order.total|float %}
+    <div class="total-row">
+      <span style="color:#6b6360;">Subtotal</span>
+      <span>₹{{ "{:,.0f}".format(order.subtotal|float) }}</span>
+    </div>
+    {% endif %}
+    {% if order.discount_amount|float > 0 %}
+    <div class="total-row">
+      <span style="color:#2d7a2d;">Discount ({{ order.discount_code }})</span>
+      <span style="color:#2d7a2d;">-₹{{ "{:,.0f}".format(order.discount_amount|float) }}</span>
+    </div>
+    {% endif %}
+    <div class="total-row grand">
+      <span>Total</span>
+      <span class="gold">₹{{ "{:,.0f}".format(order.total|float) }}</span>
+    </div>
+  </div>
+
+  {% if order.note %}
+  <div style="margin-top:24px;padding:14px;background:#faf8f4;border-left:2px solid #b8965a;">
+    <div class="section-label" style="margin-bottom:4px;">Customer Note</div>
+    <div style="font-size:12px;color:#6b6360;font-style:italic;">{{ order.note }}</div>
+  </div>
+  {% endif %}
+
+  {% if order.tracking_number %}
+  <div style="margin-top:16px;padding:14px;background:#faf8f4;">
+    <div class="section-label" style="margin-bottom:4px;">Tracking Number</div>
+    <div style="font-size:13px;font-weight:500;">{{ order.tracking_number }}</div>
+  </div>
+  {% endif %}
+
+  <div class="footer">
+    <p>{{ settings.get('logo_text','HENOSIS') }} · {{ settings.get('tagline','Crafted to stand alone.') }}</p>
+    {% if settings.get('contact_email') %}<p>{{ settings.get('contact_email') }}</p>{% endif %}
+    <p style="margin-top:8px;">Thank you for choosing {{ settings.get('logo_text','HENOSIS') }}</p>
+  </div>
+</div>
+</body>
+</html>

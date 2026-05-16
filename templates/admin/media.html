@@ -1,0 +1,179 @@
+{% extends "admin/base.html" %}
+{% block page_title %}Media & Photos{% endblock %}
+{% block content %}
+
+<!-- Upload Card -->
+<div class="card" style="margin-bottom:20px;">
+  <div class="card-title">Upload Images</div>
+  <form method="POST" action="{{ url_for('admin_media_upload') }}" enctype="multipart/form-data">
+    <div class="form-grid">
+      <div class="form-group">
+        <label>Select Images *</label>
+        <input type="file" name="files" accept="image/*" multiple required style="padding:10px;background:var(--white);border:1px dashed var(--beige);border-radius:2px;width:100%;cursor:pointer;"/>
+        <p class="form-hint">Multiple files allowed. Stored permanently in PostgreSQL — never lost on redeploy.</p>
+      </div>
+      <div class="form-group">
+        <label>Usage / Label</label>
+        <input type="text" name="usage" placeholder="e.g. hero, product, about, logo" value="general"/>
+        <p class="form-hint">Optional label to help you find images later.</p>
+      </div>
+    </div>
+    <button type="submit" class="btn btn-gold">Upload to Library</button>
+  </form>
+</div>
+
+<!-- Site Photos Assignments -->
+<div class="card" style="margin-bottom:20px;">
+  <div class="card-title">🖼 Assign Photos to Website Sections</div>
+  <p style="font-size:.78rem;color:var(--gray-mid);margin-bottom:20px;line-height:1.7;">
+    Click <strong>Use This</strong> on any image below to assign it directly to a website section. Changes are instant and permanent.
+  </p>
+  <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:12px;">
+    {% set site_sections = [
+      ('logo_image_key',   '🏷 Logo Image',          'Replaces text logo in header/footer'),
+      ('hero_image_key',   '🌅 Homepage Hero BG',    'Background image of the hero section'),
+      ('about_image_key',  '📖 About Page Image',    'Image shown on the about/story section'),
+      ('gallery_image_1',  '🖼 Gallery Image 1',     'First slot in homepage gallery'),
+      ('gallery_image_2',  '🖼 Gallery Image 2',     'Second slot in homepage gallery'),
+      ('gallery_image_3',  '🖼 Gallery Image 3',     'Third slot in homepage gallery'),
+      ('gallery_image_4',  '🖼 Gallery Image 4',     'Fourth slot in homepage gallery'),
+      ('gallery_image_5',  '🖼 Gallery Image 5',     'Fifth slot in homepage gallery'),
+      ('gallery_image_6',  '🖼 Gallery Image 6',     'Sixth slot in homepage gallery'),
+    ] %}
+    {% for key, label, hint in site_sections %}
+    {% set current = settings.get(key,'') %}
+    <div style="background:var(--cream);border-radius:2px;padding:14px;">
+      <div style="font-size:.65rem;letter-spacing:.12em;text-transform:uppercase;color:var(--gray-mid);margin-bottom:8px;">{{ label }}</div>
+      <div style="font-size:.7rem;color:var(--gray-light);margin-bottom:10px;line-height:1.5;">{{ hint }}</div>
+      {% if current %}
+      <div style="margin-bottom:8px;">
+        <img src="{{ url_for('serve_image',key=current) }}" style="width:100%;height:80px;object-fit:cover;border-radius:2px;border:1px solid var(--beige);"/>
+        <div style="font-size:.62rem;color:var(--gray-light);margin-top:3px;">Currently assigned</div>
+      </div>
+      {% else %}
+      <div style="width:100%;height:60px;background:var(--beige);border-radius:2px;display:flex;align-items:center;justify-content:center;margin-bottom:8px;">
+        <span style="font-size:.7rem;color:var(--gray-light);">Not set</span>
+      </div>
+      {% endif %}
+      <button onclick="openAssignModal('{{ key }}','{{ label }}')" class="btn btn-outline btn-sm btn-full">
+        {{ 'Change' if current else 'Assign' }} Image
+      </button>
+    </div>
+    {% endfor %}
+  </div>
+</div>
+
+<!-- Media Library Grid -->
+<div class="card">
+  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;padding-bottom:12px;border-bottom:1px solid var(--beige);">
+    <span style="font-family:var(--font-display);font-size:1.05rem;">All Uploaded Images ({{ media|length }})</span>
+    {% if media %}
+    <span style="font-size:.72rem;color:var(--gray-mid);">Click an image to assign it to a section</span>
+    {% endif %}
+  </div>
+
+  {% if media %}
+  <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:12px;">
+    {% for m in media %}
+    <div style="position:relative;border:2px solid transparent;border-radius:3px;transition:border-color .2s;cursor:pointer;" id="media_{{ m.id }}" onclick="selectMedia('{{ m.key }}','{{ m.name }}')">
+      <img src="{{ url_for('serve_media_image',key=m.key) }}" style="width:100%;height:130px;object-fit:cover;border-radius:2px;display:block;"/>
+      <div style="padding:8px;">
+        <div style="font-size:.72rem;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">{{ m.name }}</div>
+        <div style="font-size:.62rem;color:var(--gray-light);margin-top:2px;">
+          {% if m.width and m.height %}{{ m.width }}×{{ m.height }}px · {% endif %}
+          {% if m.usage and m.usage != 'general' %}<span style="color:var(--gold);">{{ m.usage }}</span>{% endif %}
+        </div>
+      </div>
+      <!-- Delete button -->
+      <form method="POST" action="{{ url_for('admin_media_delete',mid=m.id) }}"
+            onsubmit="return confirm('Delete this image permanently?')"
+            style="position:absolute;top:6px;right:6px;">
+        <button type="submit" style="width:22px;height:22px;background:rgba(204,68,68,.9);color:white;border:none;border-radius:50%;font-size:.72rem;cursor:pointer;display:flex;align-items:center;justify-content:center;">×</button>
+      </form>
+    </div>
+    {% endfor %}
+  </div>
+  {% else %}
+  <div style="text-align:center;padding:48px;color:var(--gray-light);">
+    <div style="font-size:2.5rem;margin-bottom:12px;">🖼</div>
+    <p style="font-size:.85rem;font-style:italic;">No images uploaded yet. Use the upload form above.</p>
+  </div>
+  {% endif %}
+</div>
+
+<!-- Assign Modal -->
+<div id="assignModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:1000;align-items:center;justify-content:center;padding:24px;">
+  <div style="background:var(--white);max-width:700px;width:100%;max-height:85vh;overflow-y:auto;border-radius:4px;box-shadow:0 20px 60px rgba(0,0,0,.3);">
+    <div style="padding:20px 24px;border-bottom:1px solid var(--beige);display:flex;justify-content:space-between;align-items:center;position:sticky;top:0;background:var(--white);z-index:10;">
+      <span style="font-family:var(--font-display);font-size:1.1rem;">Choose image for: <strong id="assignLabel"></strong></span>
+      <button onclick="closeAssignModal()" style="font-size:1.4rem;color:var(--gray-light);background:none;border:none;cursor:pointer;">×</button>
+    </div>
+    <div style="padding:20px;">
+      {% if media %}
+      <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:10px;">
+        {% for m in media %}
+        <form method="POST" action="{{ url_for('admin_media_assign') }}">
+          <input type="hidden" name="key" value="{{ m.key }}"/>
+          <input type="hidden" name="target" id="assignTarget_{{ m.id }}" value=""/>
+          <button type="submit" style="width:100%;padding:0;border:2px solid var(--beige);background:none;border-radius:3px;cursor:pointer;transition:border-color .2s;overflow:hidden;" onmouseover="this.style.borderColor='var(--gold)'" onmouseout="this.style.borderColor='var(--beige)'" onclick="setAssignTarget(this.closest('form').querySelector('[id^=assignTarget_]'))">
+            <img src="{{ url_for('serve_media_image',key=m.key) }}" style="width:100%;height:100px;object-fit:cover;display:block;"/>
+            <div style="padding:6px;font-size:.68rem;text-align:left;color:var(--gray-dark);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">{{ m.name }}</div>
+          </button>
+        </form>
+        {% endfor %}
+      </div>
+      {% else %}
+      <p style="text-align:center;padding:32px;color:var(--gray-mid);font-style:italic;">Upload images first to assign them.</p>
+      {% endif %}
+    </div>
+  </div>
+</div>
+
+<script>
+let currentAssignTarget = '';
+
+function openAssignModal(key, label) {
+  currentAssignTarget = key;
+  document.getElementById('assignLabel').textContent = label;
+  document.querySelectorAll('[id^="assignTarget_"]').forEach(inp => inp.value = key);
+  document.getElementById('assignModal').style.display = 'flex';
+}
+
+function closeAssignModal() {
+  document.getElementById('assignModal').style.display = 'none';
+}
+
+function setAssignTarget(inp) {
+  inp.value = currentAssignTarget;
+}
+
+function selectMedia(key, name) {
+  // Highlight selected
+  document.querySelectorAll('[id^="media_"]').forEach(el => el.style.borderColor = 'transparent');
+  // Show quick-assign panel
+  const panel = document.createElement('div');
+  panel.id = 'quickAssignBar';
+  panel.style.cssText = 'position:fixed;bottom:0;left:0;right:0;background:var(--charcoal);color:var(--ivory);padding:14px 32px;display:flex;align-items:center;gap:12px;flex-wrap:wrap;z-index:500;box-shadow:0 -4px 20px rgba(0,0,0,.2);';
+  panel.innerHTML = `
+    <span style="font-size:.78rem;color:var(--champagne);">Selected: <strong>${name}</strong></span>
+    <span style="font-size:.72rem;color:rgba(250,248,244,.5);">Assign to:</span>
+    ${[
+      ['logo_image_key','Logo'],['hero_image_key','Hero BG'],['about_image_key','About Image'],
+      ['gallery_image_1','Gallery 1'],['gallery_image_2','Gallery 2'],['gallery_image_3','Gallery 3'],
+      ['gallery_image_4','Gallery 4'],['gallery_image_5','Gallery 5'],['gallery_image_6','Gallery 6'],
+    ].map(([k,l]) => `
+      <form method="POST" action="/henosis-admin/media/assign" style="display:inline;">
+        <input type="hidden" name="key" value="${key}"/>
+        <input type="hidden" name="target" value="${k}"/>
+        <button type="submit" style="padding:6px 14px;background:rgba(255,255,255,.12);color:var(--ivory);border:1px solid rgba(255,255,255,.2);border-radius:2px;font-size:.62rem;letter-spacing:.1em;text-transform:uppercase;cursor:pointer;">${l}</button>
+      </form>`).join('')}
+    <button onclick="this.closest('#quickAssignBar').remove()" style="margin-left:auto;font-size:.72rem;color:rgba(250,248,244,.4);background:none;border:none;cursor:pointer;">✕ Close</button>
+  `;
+  const existing = document.getElementById('quickAssignBar');
+  if (existing) existing.remove();
+  document.body.appendChild(panel);
+}
+
+document.addEventListener('keydown', e => { if(e.key==='Escape') closeAssignModal(); });
+</script>
+{% endblock %}

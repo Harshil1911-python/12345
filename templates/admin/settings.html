@@ -2,7 +2,7 @@
 {% block page_title %}Site Settings{% endblock %}
 {% block content %}
 
-{% set tabs = [('brand','Brand & Contact'),('hero','Homepage Hero'),('banner','Banner'),('shop','Shop & Orders'),('colors','Colors'),('seo','SEO'),('advanced','Advanced')] %}
+{% set tabs = [('brand','Brand & Contact'),('hero','Homepage Hero'),('banner','Banner'),('shop','Shop & Orders'),('colors','Colors'),('seo','SEO'),('pages','Pages Builder'),('advanced','Advanced')] %}
 
 <!-- Tab bar -->
 <div style="display:flex;gap:4px;margin-bottom:24px;background:var(--white);padding:6px;border-radius:4px;box-shadow:0 2px 12px rgba(14,14,14,.04);flex-wrap:wrap;">
@@ -235,6 +235,289 @@
       </div>
     </div>
   </div>
+
+  <!-- PAGES BUILDER TAB -->
+  {% elif active_tab == 'pages' %}
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px;align-items:start;">
+
+    <!-- Left: page list + create -->
+    <div style="display:flex;flex-direction:column;gap:16px;">
+      <div class="card">
+        <div class="card-title">All Custom Pages</div>
+        {% if all_pages %}
+        <div style="display:flex;flex-direction:column;gap:8px;">
+          {% for page in all_pages %}
+          <div style="display:flex;align-items:center;justify-content:space-between;padding:12px;background:var(--cream);border-radius:2px;">
+            <div>
+              <div style="font-weight:500;font-size:.85rem;">{{ page.title }}</div>
+              <div style="font-size:.7rem;color:var(--gray-mid);margin-top:2px;">/page/{{ page.slug }} · {% if page.published %}<span style="color:#2d7a2d;">Published</span>{% else %}<span style="color:#c44;">Draft</span>{% endif %}</div>
+            </div>
+            <div style="display:flex;gap:6px;">
+              <a href="{{ url_for('custom_page',slug=page.slug) }}" target="_blank" class="btn btn-outline btn-sm">View</a>
+              <button type="button" onclick="loadPageForEdit('{{ page.id }}','{{ page.title|replace("'","\'") }}','{{ page.slug }}',{{ 'true' if page.published else 'false' }})" class="btn btn-gold btn-sm">Edit</button>
+              <form method="POST" action="{{ url_for('admin_delete_page',pid=page.id) }}" onsubmit="return confirm('Delete this page?')" style="display:inline;">
+                <button type="submit" class="btn btn-danger btn-sm">Del</button>
+              </form>
+            </div>
+          </div>
+          {% endfor %}
+        </div>
+        {% else %}
+        <p style="font-size:.82rem;color:var(--gray-mid);font-style:italic;">No custom pages yet. Create one →</p>
+        {% endif %}
+      </div>
+
+      <!-- Block library -->
+      <div class="card">
+        <div class="card-title">Add Section Blocks</div>
+        <p style="font-size:.75rem;color:var(--gray-mid);margin-bottom:14px;line-height:1.6;">Click any block to insert it into your page. Edit the text directly in the preview.</p>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
+          <button type="button" onclick="insertBlock('heading')" class="block-btn">📝 Heading</button>
+          <button type="button" onclick="insertBlock('paragraph')" class="block-btn">¶ Paragraph</button>
+          <button type="button" onclick="insertBlock('quote')" class="block-btn">❝ Quote</button>
+          <button type="button" onclick="insertBlock('divider')" class="block-btn">— Divider</button>
+          <button type="button" onclick="insertBlock('two_col')" class="block-btn">▥ Two Columns</button>
+          <button type="button" onclick="insertBlock('highlight')" class="block-btn">◈ Highlight Box</button>
+          <button type="button" onclick="insertBlock('image_text')" class="block-btn">🖼 Image + Text</button>
+          <button type="button" onclick="insertBlock('cta')" class="block-btn">→ CTA Button</button>
+          <button type="button" onclick="insertBlock('values_grid')" class="block-btn">⊞ Values Grid</button>
+          <button type="button" onclick="insertBlock('hero_banner')" class="block-btn">◉ Hero Banner</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Right: page editor -->
+    <div style="position:sticky;top:80px;">
+      <div class="card">
+        <div class="card-title" id="editorTitle">Create New Page</div>
+
+        <!-- Page meta -->
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:16px;">
+          <div class="form-group" style="margin:0;">
+            <label>Page Title *</label>
+            <input type="text" id="pageTitle" placeholder="e.g. About Our Craft" oninput="autoSlug(this.value)"/>
+          </div>
+          <div class="form-group" style="margin:0;">
+            <label>URL Slug *</label>
+            <input type="text" id="pageSlug" placeholder="about-our-craft"/>
+          </div>
+        </div>
+        <label class="form-check" style="margin-bottom:16px;">
+          <input type="checkbox" id="pagePublished" checked/>
+          <span>Published (visible to visitors)</span>
+        </label>
+
+        <!-- Visual preview / editable area -->
+        <div style="border:1px solid var(--beige);border-radius:2px;min-height:300px;background:var(--ivory);margin-bottom:12px;">
+          <div style="background:var(--cream);padding:8px 12px;border-bottom:1px solid var(--beige);font-size:.62rem;letter-spacing:.12em;text-transform:uppercase;color:var(--gray-mid);display:flex;justify-content:space-between;align-items:center;">
+            <span>Page Preview — click blocks to edit</span>
+            <button type="button" onclick="clearEditor()" style="font-size:.6rem;color:#c44;background:none;border:none;cursor:pointer;letter-spacing:.08em;text-transform:uppercase;">Clear All</button>
+          </div>
+          <div id="pageBlocks" style="padding:16px;min-height:260px;" ondragover="event.preventDefault()" ondrop="handleDrop(event)">
+            <div id="emptyHint" style="text-align:center;padding:48px 20px;color:var(--gray-light);">
+              <div style="font-size:2rem;margin-bottom:8px;">+</div>
+              <div style="font-size:.8rem;">Click a block from the library to start building</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Save button -->
+        <div style="display:flex;gap:8px;">
+          <button type="button" onclick="savePage()" class="btn btn-gold btn-full" id="savePageBtn">Save Page</button>
+          <button type="button" onclick="resetEditor()" class="btn btn-outline" style="flex-shrink:0;">New</button>
+        </div>
+        <input type="hidden" id="editingPageId" value=""/>
+      </div>
+    </div>
+  </div>
+
+  <style>
+    .block-btn{padding:9px 10px;border:1px solid var(--beige);background:var(--white);border-radius:2px;font-family:var(--font-body);font-size:.68rem;cursor:pointer;text-align:left;transition:all .2s;color:var(--gray-dark);}
+    .block-btn:hover{background:var(--cream);border-color:var(--gold);color:var(--charcoal);}
+    .page-block{position:relative;border:1px dashed transparent;border-radius:2px;padding:2px;margin-bottom:4px;cursor:pointer;transition:border-color .2s;}
+    .page-block:hover{border-color:var(--gold);}
+    .page-block .block-toolbar{display:none;position:absolute;top:-1px;right:0;background:var(--charcoal);border-radius:2px;z-index:10;}
+    .page-block:hover .block-toolbar{display:flex;}
+    .block-toolbar button{padding:4px 8px;font-size:.6rem;color:var(--ivory);background:none;border:none;cursor:pointer;letter-spacing:.05em;}
+    .block-toolbar button:hover{color:var(--champagne);}
+  </style>
+
+  <script>
+  const BLOCKS = {
+    heading: {
+      label:'Heading',
+      html:`<div style="text-align:center;padding:24px 0 8px;"><h2 style="font-family:'Cormorant Garamond',serif;font-size:2rem;font-weight:400;color:#1a1a1a;margin:0;" contenteditable="true" data-placeholder="Your Section Heading">Your Section Heading</h2></div>`
+    },
+    paragraph: {
+      label:'Paragraph',
+      html:`<p style="font-family:'Raleway',sans-serif;font-size:.95rem;line-height:1.9;color:#3a3530;margin:12px 0;" contenteditable="true" data-placeholder="Write your paragraph here...">Write your paragraph here. Click to edit this text directly.</p>`
+    },
+    quote: {
+      label:'Quote',
+      html:`<blockquote style="border-left:2px solid #b8965a;padding:16px 24px;margin:24px 0;font-family:'Cormorant Garamond',serif;font-style:italic;font-size:1.15rem;color:#6b6360;line-height:1.6;" contenteditable="true">"Your inspiring quote goes here. Click to edit."</blockquote>`
+    },
+    divider: {
+      label:'Divider',
+      html:`<div style="text-align:center;color:#b8965a;letter-spacing:.3em;margin:24px 0;font-size:.8rem;">· · ·</div>`
+    },
+    highlight: {
+      label:'Highlight Box',
+      html:`<div style="background:#f5f0e8;border-left:3px solid #b8965a;padding:20px 24px;margin:20px 0;border-radius:2px;"><p style="font-family:'Raleway',sans-serif;font-size:.9rem;color:#3a3530;line-height:1.8;margin:0;" contenteditable="true">✨ This is a highlighted callout. Great for important notes, shipping info, or special offers.</p></div>`
+    },
+    two_col: {
+      label:'Two Columns',
+      html:`<div style="display:grid;grid-template-columns:1fr 1fr;gap:24px;margin:24px 0;"><div style="background:#f5f0e8;padding:24px;border-radius:2px;"><h3 style="font-family:'Cormorant Garamond',serif;font-size:1.1rem;font-weight:400;margin-bottom:10px;" contenteditable="true">Column One</h3><p style="font-family:'Raleway',sans-serif;font-size:.85rem;color:#6b6360;line-height:1.8;margin:0;" contenteditable="true">Your content for the left column goes here.</p></div><div style="background:#f5f0e8;padding:24px;border-radius:2px;"><h3 style="font-family:'Cormorant Garamond',serif;font-size:1.1rem;font-weight:400;margin-bottom:10px;" contenteditable="true">Column Two</h3><p style="font-family:'Raleway',sans-serif;font-size:.85rem;color:#6b6360;line-height:1.8;margin:0;" contenteditable="true">Your content for the right column goes here.</p></div></div>`
+    },
+    image_text: {
+      label:'Image + Text',
+      html:`<div style="display:grid;grid-template-columns:1fr 1fr;gap:32px;align-items:center;margin:32px 0;"><div style="background:#e8ddd0;aspect-ratio:4/3;border-radius:2px;display:flex;align-items:center;justify-content:center;color:#9e9690;font-family:'Raleway',sans-serif;font-size:.78rem;letter-spacing:.1em;text-transform:uppercase;">Image Placeholder</div><div><h3 style="font-family:'Cormorant Garamond',serif;font-size:1.4rem;font-weight:400;margin-bottom:12px;" contenteditable="true">Your Heading Here</h3><p style="font-family:'Raleway',sans-serif;font-size:.88rem;line-height:1.9;color:#6b6360;" contenteditable="true">Describe what makes this special. Click to edit this text and make it your own.</p></div></div>`
+    },
+    cta: {
+      label:'CTA Button',
+      html:`<div style="text-align:center;padding:32px 0;"><p style="font-family:'Raleway',sans-serif;font-size:.88rem;color:#6b6360;margin-bottom:20px;" contenteditable="true">Ready to explore? Discover our collection.</p><a href="/shop" style="display:inline-block;padding:14px 40px;background:#b8965a;color:#fff;font-family:'Raleway',sans-serif;font-size:.7rem;letter-spacing:.18em;text-transform:uppercase;text-decoration:none;border-radius:1px;" contenteditable="true">Shop Now</a></div>`
+    },
+    values_grid: {
+      label:'Values Grid',
+      html:`<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:20px;margin:32px 0;"><div style="background:#f5f0e8;padding:24px;border-radius:2px;text-align:center;"><div style="font-size:1.5rem;margin-bottom:10px;">✦</div><h4 style="font-family:'Cormorant Garamond',serif;font-size:1rem;font-weight:400;margin-bottom:8px;" contenteditable="true">Quality</h4><p style="font-family:'Raleway',sans-serif;font-size:.8rem;color:#6b6360;line-height:1.7;margin:0;" contenteditable="true">Crafted with the finest materials and attention to detail.</p></div><div style="background:#f5f0e8;padding:24px;border-radius:2px;text-align:center;"><div style="font-size:1.5rem;margin-bottom:10px;">✦</div><h4 style="font-family:'Cormorant Garamond',serif;font-size:1rem;font-weight:400;margin-bottom:8px;" contenteditable="true">Exclusivity</h4><p style="font-family:'Raleway',sans-serif;font-size:.8rem;color:#6b6360;line-height:1.7;margin:0;" contenteditable="true">Many pieces exist only once. When it's gone, it's yours alone.</p></div><div style="background:#f5f0e8;padding:24px;border-radius:2px;text-align:center;"><div style="font-size:1.5rem;margin-bottom:10px;">✦</div><h4 style="font-family:'Cormorant Garamond',serif;font-size:1rem;font-weight:400;margin-bottom:8px;" contenteditable="true">Care</h4><p style="font-family:'Raleway',sans-serif;font-size:.8rem;color:#6b6360;line-height:1.7;margin:0;" contenteditable="true">Every order packed and sent with intention and love.</p></div></div>`
+    },
+    hero_banner: {
+      label:'Hero Banner',
+      html:`<div style="background:#1a1a1a;color:#faf8f4;text-align:center;padding:56px 32px;margin:24px 0;border-radius:2px;"><div style="font-family:'Raleway',sans-serif;font-size:.6rem;letter-spacing:.25em;text-transform:uppercase;color:#c9a96e;margin-bottom:16px;" contenteditable="true">Featured Collection</div><h2 style="font-family:'Cormorant Garamond',serif;font-size:2.2rem;font-weight:300;line-height:1.2;margin-bottom:16px;" contenteditable="true">A new chapter in craft</h2><p style="font-family:'Raleway',sans-serif;font-size:.88rem;color:rgba(250,248,244,.6);max-width:400px;margin:0 auto 28px;" contenteditable="true">Discover pieces that speak your story.</p><a href="/shop" style="display:inline-block;padding:12px 32px;background:#b8965a;color:#fff;font-family:'Raleway',sans-serif;font-size:.68rem;letter-spacing:.18em;text-transform:uppercase;text-decoration:none;" contenteditable="true">Explore Now</a></div>`
+    }
+  };
+
+  let blockOrder = [];
+  let editingId = '';
+
+  function insertBlock(type) {
+    const hint = document.getElementById('emptyHint');
+    if (hint) hint.remove();
+    const container = document.getElementById('pageBlocks');
+    const id = 'block_' + Date.now();
+    const wrapper = document.createElement('div');
+    wrapper.className = 'page-block';
+    wrapper.id = id;
+    wrapper.setAttribute('draggable','true');
+    wrapper.innerHTML = `
+      <div class="block-toolbar">
+        <button onclick="moveBlock('${id}',-1)" title="Move up">↑</button>
+        <button onclick="moveBlock('${id}',1)" title="Move down">↓</button>
+        <button onclick="duplicateBlock('${id}')" title="Duplicate">⊕</button>
+        <button onclick="removeBlock('${id}')" title="Remove" style="color:#f99;">✕</button>
+      </div>
+      ${BLOCKS[type].html}`;
+    wrapper.addEventListener('dragstart', e => { e.dataTransfer.setData('text/plain', id); wrapper.style.opacity='.4'; });
+    wrapper.addEventListener('dragend', () => wrapper.style.opacity='1');
+    container.appendChild(wrapper);
+    blockOrder.push(id);
+  }
+
+  function removeBlock(id) {
+    document.getElementById(id)?.remove();
+    blockOrder = blockOrder.filter(b => b !== id);
+    if (!document.getElementById('pageBlocks').children.length)
+      document.getElementById('pageBlocks').innerHTML = '<div id="emptyHint" style="text-align:center;padding:48px 20px;color:var(--gray-light);"><div style="font-size:2rem;margin-bottom:8px;">+</div><div style="font-size:.8rem;">Click a block to start building</div></div>';
+  }
+
+  function moveBlock(id, dir) {
+    const el = document.getElementById(id);
+    const parent = el.parentNode;
+    if (dir === -1 && el.previousElementSibling) parent.insertBefore(el, el.previousElementSibling);
+    if (dir === 1 && el.nextElementSibling) parent.insertBefore(el.nextElementSibling, el);
+  }
+
+  function duplicateBlock(id) {
+    const el = document.getElementById(id);
+    const clone = el.cloneNode(true);
+    const newId = 'block_' + Date.now();
+    clone.id = newId;
+    clone.querySelectorAll('[onclick]').forEach(btn => {
+      btn.setAttribute('onclick', btn.getAttribute('onclick').replace(id, newId));
+    });
+    el.parentNode.insertBefore(clone, el.nextSibling);
+  }
+
+  function handleDrop(e) {
+    const id = e.dataTransfer.getData('text/plain');
+    const target = e.target.closest('.page-block');
+    const el = document.getElementById(id);
+    if (el && target && target !== el) {
+      target.parentNode.insertBefore(el, target);
+    }
+  }
+
+  function clearEditor() {
+    if (!confirm('Clear all blocks?')) return;
+    document.getElementById('pageBlocks').innerHTML = '<div id="emptyHint" style="text-align:center;padding:48px 20px;color:var(--gray-light);"><div style="font-size:2rem;margin-bottom:8px;">+</div><div style="font-size:.8rem;">Click a block to start building</div></div>';
+  }
+
+  function resetEditor() {
+    document.getElementById('pageTitle').value = '';
+    document.getElementById('pageSlug').value = '';
+    document.getElementById('pagePublished').checked = true;
+    document.getElementById('editingPageId').value = '';
+    document.getElementById('editorTitle').textContent = 'Create New Page';
+    clearEditor();
+  }
+
+  function loadPageForEdit(id, title, slug, published) {
+    document.getElementById('editingPageId').value = id;
+    document.getElementById('pageTitle').value = title;
+    document.getElementById('pageSlug').value = slug;
+    document.getElementById('pagePublished').checked = published;
+    document.getElementById('editorTitle').textContent = 'Editing: ' + title;
+    alert('Page meta loaded. Note: visual blocks cannot be reconstructed from saved HTML. You can add new blocks and save to update the page content.');
+  }
+
+  function autoSlug(title) {
+    const slugEl = document.getElementById('pageSlug');
+    if (!slugEl.dataset.manual) {
+      slugEl.value = title.toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,'');
+    }
+  }
+  document.addEventListener('DOMContentLoaded', () => {
+    const slugEl = document.getElementById('pageSlug');
+    if (slugEl) slugEl.addEventListener('input', () => slugEl.dataset.manual = '1');
+  });
+
+  async function savePage() {
+    const title  = document.getElementById('pageTitle').value.trim();
+    const slug   = document.getElementById('pageSlug').value.trim();
+    const pub    = document.getElementById('pagePublished').checked;
+    const editId = document.getElementById('editingPageId').value;
+    if (!title || !slug) { alert('Title and slug are required'); return; }
+
+    // Extract HTML from blocks (strip toolbars)
+    const blocksEl = document.getElementById('pageBlocks');
+    const cloned   = blocksEl.cloneNode(true);
+    cloned.querySelectorAll('.block-toolbar').forEach(t => t.remove());
+    cloned.querySelectorAll('.page-block').forEach(b => {
+      b.removeAttribute('draggable'); b.removeAttribute('class'); b.removeAttribute('id'); b.removeAttribute('style');
+      b.outerHTML = b.innerHTML;
+    });
+    const content = cloned.innerHTML.replace(/<div id="emptyHint"[^>]*>[\s\S]*?<\/div><\/div>/g,'').trim();
+
+    const btn = document.getElementById('savePageBtn');
+    btn.textContent = 'Saving…'; btn.disabled = true;
+
+    const fd = new FormData();
+    fd.append('id', editId); fd.append('title', title);
+    fd.append('slug', slug); fd.append('content', content);
+    if (pub) fd.append('published', '1');
+
+    const res = await fetch('/henosis-admin/pages/save', { method: 'POST', body: fd });
+    btn.textContent = 'Save Page'; btn.disabled = false;
+
+    if (res.redirected || res.ok) {
+      const successMsg = document.createElement('div');
+      successMsg.style.cssText = 'background:#e8f4e8;color:#2d7a2d;border-left:3px solid #2d7a2d;padding:10px 16px;border-radius:2px;font-size:.8rem;margin-top:10px;';
+      successMsg.textContent = '✓ Page saved! View at /page/' + slug;
+      btn.parentNode.appendChild(successMsg);
+      setTimeout(() => { successMsg.remove(); location.reload(); }, 2000);
+    }
+  }
+  </script>
+
   {% endif %}
 
   <div style="margin-top:20px;display:flex;gap:10px;align-items:center;">

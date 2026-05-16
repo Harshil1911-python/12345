@@ -9,52 +9,81 @@
   <style>
     :root{--ivory:#faf8f4;--cream:#f5f0e8;--beige:#e8ddd0;--champagne:#c9a96e;--gold:#b8965a;
     --black:#0e0e0e;--charcoal:#1a1a1a;--gray-dark:#3a3530;--gray-mid:#6b6360;--gray-light:#9e9690;
-    --white:#ffffff;--sidebar:248px;--font-display:'Cormorant Garamond',serif;--font-body:'Raleway',sans-serif;}
+    --white:#ffffff;--sidebar:252px;--font-display:'Cormorant Garamond',serif;--font-body:'Raleway',sans-serif;}
     *,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
     body{font-family:var(--font-body);background:#ede9e2;color:var(--charcoal);display:flex;min-height:100vh;}
     a{text-decoration:none;color:inherit;}img{display:block;max-width:100%;}button{cursor:pointer;}
 
-    /* Sidebar */
-    .sidebar{width:var(--sidebar);background:var(--charcoal);color:var(--ivory);position:fixed;top:0;left:0;
-    height:100vh;overflow-y:auto;display:flex;flex-direction:column;z-index:50;}
-    .sidebar-logo{padding:24px 20px 18px;font-family:var(--font-display);font-size:1.25rem;letter-spacing:.14em;
-    color:var(--ivory);border-bottom:1px solid rgba(255,255,255,.07);}
+    /* ── Sidebar ── */
+    .sidebar{width:var(--sidebar);background:var(--charcoal);color:var(--ivory);position:fixed;top:0;left:0;height:100vh;overflow-y:auto;display:flex;flex-direction:column;z-index:50;scrollbar-width:thin;scrollbar-color:rgba(255,255,255,.1) transparent;}
+    .sidebar-logo{padding:24px 20px 18px;font-family:var(--font-display);font-size:1.25rem;letter-spacing:.14em;color:var(--ivory);border-bottom:1px solid rgba(255,255,255,.07);}
     .sidebar-logo span{display:block;font-size:.55rem;letter-spacing:.2em;text-transform:uppercase;color:var(--champagne);margin-top:3px;}
-    .sidebar-section{padding:14px 20px 6px;font-size:.52rem;letter-spacing:.2em;text-transform:uppercase;
-    color:rgba(250,248,244,.25);font-family:var(--font-body);}
-    .sidebar-nav{padding:8px 0;flex:1;}
-    .sidebar-link{display:flex;align-items:center;gap:10px;padding:10px 20px;font-size:.68rem;
-    letter-spacing:.09em;text-transform:uppercase;color:rgba(250,248,244,.52);transition:all .2s;position:relative;}
+    .sidebar-section{padding:14px 20px 5px;font-size:.52rem;letter-spacing:.2em;text-transform:uppercase;color:rgba(250,248,244,.22);}
+    .sidebar-nav{padding:6px 0;flex:1;}
+    .sidebar-link{display:flex;align-items:center;gap:10px;padding:10px 20px;font-size:.68rem;letter-spacing:.09em;text-transform:uppercase;color:rgba(250,248,244,.5);transition:all .2s;position:relative;}
     .sidebar-link:hover,.sidebar-link.active{color:var(--ivory);background:rgba(255,255,255,.06);}
     .sidebar-link.active::before{content:'';position:absolute;left:0;top:0;bottom:0;width:2px;background:var(--gold);}
-    .sidebar-link svg{flex-shrink:0;opacity:.65;width:15px;height:15px;}
+    .sidebar-link svg{flex-shrink:0;opacity:.6;width:15px;height:15px;}
     .sidebar-link.active svg,.sidebar-link:hover svg{opacity:1;}
-    .sidebar-badge{margin-left:auto;background:var(--gold);color:var(--white);font-size:.55rem;
-    font-weight:600;padding:2px 6px;border-radius:10px;}
+    .sidebar-badge{margin-left:auto;background:var(--gold);color:var(--white);font-size:.55rem;font-weight:700;padding:2px 7px;border-radius:10px;min-width:18px;text-align:center;}
+    .sidebar-badge.red{background:#c44;}
     .sidebar-footer{padding:16px 20px;border-top:1px solid rgba(255,255,255,.07);}
-    .sidebar-footer a{font-size:.62rem;letter-spacing:.1em;text-transform:uppercase;
-    color:rgba(250,248,244,.35);transition:color .2s;}
+    .sidebar-footer a{font-size:.62rem;letter-spacing:.1em;text-transform:uppercase;color:rgba(250,248,244,.3);transition:color .2s;}
     .sidebar-footer a:hover{color:var(--ivory);}
 
-    /* Main */
+    /* ── Main ── */
     .admin-main{margin-left:var(--sidebar);flex:1;min-height:100vh;display:flex;flex-direction:column;}
-    .admin-topbar{background:var(--white);padding:14px 32px;display:flex;align-items:center;
-    justify-content:space-between;border-bottom:1px solid var(--beige);position:sticky;top:0;z-index:40;
-    box-shadow:0 2px 12px rgba(14,14,14,.04);}
+    .admin-topbar{background:var(--white);padding:0 32px;height:60px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid var(--beige);position:sticky;top:0;z-index:40;box-shadow:0 2px 12px rgba(14,14,14,.04);}
     .topbar-left{display:flex;align-items:center;gap:16px;}
-    .topbar-left h1{font-family:var(--font-display);font-size:1.35rem;font-weight:400;}
-    .topbar-right{display:flex;align-items:center;gap:14px;}
-    .topbar-badge{font-size:.6rem;letter-spacing:.1em;text-transform:uppercase;background:var(--cream);
-    color:var(--gray-mid);padding:5px 10px;border-radius:2px;}
+    .topbar-left h1{font-family:var(--font-display);font-size:1.3rem;font-weight:400;}
+    .topbar-right{display:flex;align-items:center;gap:10px;}
+    .topbar-badge{font-size:.6rem;letter-spacing:.1em;text-transform:uppercase;background:var(--cream);color:var(--gray-mid);padding:5px 10px;border-radius:2px;}
+
+    /* ── Quick Search ── */
+    .search-overlay{position:fixed;inset:0;background:rgba(14,14,14,.5);z-index:200;display:none;align-items:flex-start;justify-content:center;padding-top:80px;}
+    .search-overlay.open{display:flex;}
+    .search-box{background:var(--white);width:600px;max-width:90vw;border-radius:4px;box-shadow:0 20px 60px rgba(14,14,14,.3);overflow:hidden;}
+    .search-input-wrap{display:flex;align-items:center;gap:12px;padding:16px 20px;border-bottom:1px solid var(--beige);}
+    .search-input-wrap svg{color:var(--gray-light);flex-shrink:0;}
+    .search-input-wrap input{flex:1;border:none;outline:none;font-family:var(--font-body);font-size:1rem;color:var(--charcoal);}
+    .search-kbd{font-size:.65rem;padding:3px 7px;border:1px solid var(--beige);border-radius:3px;color:var(--gray-light);}
+    .search-results{max-height:380px;overflow-y:auto;}
+    .search-group{padding:10px 0;}
+    .search-group-title{font-size:.6rem;letter-spacing:.15em;text-transform:uppercase;color:var(--gray-light);padding:4px 20px 8px;}
+    .search-item{display:flex;align-items:center;gap:12px;padding:10px 20px;transition:background .15s;cursor:pointer;}
+    .search-item:hover,.search-item.selected{background:var(--cream);}
+    .search-item-icon{width:32px;height:32px;border-radius:2px;background:var(--cream);display:flex;align-items:center;justify-content:center;flex-shrink:0;color:var(--gold);}
+    .search-item-name{font-size:.85rem;font-weight:500;}
+    .search-item-sub{font-size:.72rem;color:var(--gray-mid);}
+    .search-empty{padding:32px 20px;text-align:center;color:var(--gray-light);font-size:.85rem;font-style:italic;}
+
+    /* ── Notifications bell ── */
+    .notif-btn{position:relative;width:36px;height:36px;border:none;background:none;display:flex;align-items:center;justify-content:center;color:var(--gray-mid);transition:color .2s;cursor:pointer;}
+    .notif-btn:hover{color:var(--charcoal);}
+    .notif-dot{position:absolute;top:4px;right:4px;width:8px;height:8px;background:#c44;border-radius:50%;border:2px solid var(--white);display:none;}
+    .notif-dot.show{display:block;}
+    .notif-panel{position:absolute;top:calc(100% + 8px);right:0;width:340px;background:var(--white);border-radius:4px;box-shadow:0 8px 32px rgba(14,14,14,.15);border:1px solid var(--beige);z-index:100;display:none;max-height:420px;overflow-y:auto;}
+    .notif-panel.open{display:block;}
+    .notif-header{padding:14px 18px;border-bottom:1px solid var(--beige);display:flex;align-items:center;justify-content:space-between;}
+    .notif-header span{font-size:.72rem;font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:var(--gray-dark);}
+    .notif-header button{font-size:.6rem;letter-spacing:.1em;text-transform:uppercase;color:var(--gold);background:none;border:none;cursor:pointer;}
+    .notif-item{display:flex;gap:12px;padding:12px 18px;border-bottom:1px solid var(--beige);transition:background .15s;cursor:pointer;}
+    .notif-item:hover{background:var(--cream);}
+    .notif-item.unread{background:#fffcf0;}
+    .notif-icon{width:32px;height:32px;border-radius:50%;display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:.8rem;}
+    .notif-icon.order{background:#e8f4e8;color:#2d7a2d;}
+    .notif-icon.product{background:rgba(201,169,110,.15);color:var(--gold);}
+    .notif-icon.info{background:var(--cream);color:var(--gray-mid);}
+    .notif-title{font-size:.82rem;font-weight:500;margin-bottom:2px;}
+    .notif-body{font-size:.75rem;color:var(--gray-mid);}
+    .notif-time{font-size:.65rem;color:var(--gray-light);margin-top:2px;}
+    .notif-wrap{position:relative;}
+
+    /* ── Cards, Tables, Forms ── */
     .admin-content{padding:28px 32px;flex:1;}
-
-    /* Cards */
     .card{background:var(--white);border-radius:4px;padding:24px;box-shadow:0 2px 12px rgba(14,14,14,.04);}
-    .card-title{font-family:var(--font-display);font-size:1.05rem;font-weight:400;margin-bottom:18px;
-    padding-bottom:12px;border-bottom:1px solid var(--beige);}
+    .card-title{font-family:var(--font-display);font-size:1.05rem;font-weight:400;margin-bottom:18px;padding-bottom:12px;border-bottom:1px solid var(--beige);}
     .card-sm{padding:18px 22px;}
-
-    /* Stats */
     .stats-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:16px;margin-bottom:24px;}
     .stat-card{background:var(--white);border-radius:4px;padding:20px;box-shadow:0 2px 12px rgba(14,14,14,.04);}
     .stat-label{font-size:.58rem;letter-spacing:.15em;text-transform:uppercase;color:var(--gray-light);margin-bottom:8px;}
@@ -66,24 +95,16 @@
     .stat-card.accent .stat-sub{color:rgba(250,248,244,.3);}
     .stat-card.gold{background:var(--gold);}
     .stat-card.gold .stat-label,.stat-card.gold .stat-value,.stat-card.gold .stat-sub{color:var(--white);}
-
-    /* Table */
     .table-wrap{overflow-x:auto;}
     table{width:100%;border-collapse:collapse;}
-    th{font-size:.58rem;letter-spacing:.15em;text-transform:uppercase;color:var(--gray-light);
-    padding:10px 14px;text-align:left;border-bottom:2px solid var(--beige);white-space:nowrap;}
+    th{font-size:.58rem;letter-spacing:.15em;text-transform:uppercase;color:var(--gray-light);padding:10px 14px;text-align:left;border-bottom:2px solid var(--beige);white-space:nowrap;}
     td{padding:12px 14px;font-size:.8rem;border-bottom:1px solid var(--beige);vertical-align:middle;}
     tr:last-child td{border-bottom:none;}
     tr:hover td{background:#fdf9f3;}
-
-    /* Forms */
     .form-grid{display:grid;grid-template-columns:1fr 1fr;gap:18px;}
     .form-group{margin-bottom:18px;}
-    .form-group label{display:block;font-size:.6rem;letter-spacing:.12em;text-transform:uppercase;
-    color:var(--gray-mid);margin-bottom:7px;}
-    .form-group input,.form-group textarea,.form-group select{width:100%;padding:10px 13px;
-    border:1px solid var(--beige);background:var(--ivory);font-family:var(--font-body);font-size:.85rem;
-    color:var(--charcoal);transition:border-color .2s;outline:none;border-radius:2px;}
+    .form-group label{display:block;font-size:.6rem;letter-spacing:.12em;text-transform:uppercase;color:var(--gray-mid);margin-bottom:7px;}
+    .form-group input,.form-group textarea,.form-group select{width:100%;padding:10px 13px;border:1px solid var(--beige);background:var(--ivory);font-family:var(--font-body);font-size:.85rem;color:var(--charcoal);transition:border-color .2s;outline:none;border-radius:2px;}
     .form-group input:focus,.form-group textarea:focus,.form-group select:focus{border-color:var(--gold);}
     .form-group textarea{resize:vertical;min-height:90px;}
     .form-check{display:flex;align-items:center;gap:9px;cursor:pointer;margin-bottom:10px;}
@@ -91,11 +112,7 @@
     .form-check span{font-size:.78rem;color:var(--gray-dark);}
     .form-full{grid-column:1/-1;}
     .form-hint{font-size:.68rem;color:var(--gray-mid);margin-top:5px;line-height:1.5;}
-
-    /* Buttons */
-    .btn{display:inline-flex;align-items:center;gap:6px;font-family:var(--font-body);font-size:.65rem;
-    font-weight:600;letter-spacing:.14em;text-transform:uppercase;padding:9px 20px;
-    border:1px solid transparent;transition:all .22s;cursor:pointer;border-radius:2px;white-space:nowrap;}
+    .btn{display:inline-flex;align-items:center;gap:6px;font-family:var(--font-body);font-size:.65rem;font-weight:600;letter-spacing:.14em;text-transform:uppercase;padding:9px 20px;border:1px solid transparent;transition:all .22s;cursor:pointer;border-radius:2px;white-space:nowrap;}
     .btn-primary{background:var(--charcoal);color:var(--ivory);border-color:var(--charcoal);}
     .btn-primary:hover{background:var(--black);}
     .btn-gold{background:var(--gold);color:var(--white);border-color:var(--gold);}
@@ -105,11 +122,8 @@
     .btn-danger{background:transparent;color:#c44;border-color:rgba(204,68,68,.4);}
     .btn-danger:hover{background:#c44;color:var(--white);border-color:#c44;}
     .btn-success{background:#2d7a2d;color:var(--white);border-color:#2d7a2d;}
-    .btn-success:hover{background:#236023;}
     .btn-sm{padding:5px 13px;font-size:.58rem;}
     .btn-full{width:100%;justify-content:center;}
-
-    /* Badges */
     .badge{display:inline-block;font-size:.56rem;letter-spacing:.1em;text-transform:uppercase;padding:3px 7px;border-radius:2px;}
     .badge-success{background:#e8f4e8;color:#2d7a2d;}
     .badge-warning{background:#fef3cd;color:#856404;}
@@ -117,121 +131,237 @@
     .badge-gold{background:rgba(201,169,110,.15);color:var(--gold);}
     .badge-dark{background:var(--charcoal);color:var(--ivory);}
     .badge-gray{background:var(--cream);color:var(--gray-mid);}
-
-    /* Alert */
     .alert{padding:11px 18px;border-radius:2px;font-size:.8rem;margin-bottom:20px;}
     .alert-success{background:#e8f4e8;color:#2d7a2d;border-left:3px solid #2d7a2d;}
     .alert-error{background:#fde8e8;color:#c44;border-left:3px solid #c44;}
-
-    /* Page header */
     .page-actions{display:flex;align-items:center;justify-content:space-between;margin-bottom:22px;flex-wrap:wrap;gap:10px;}
     .page-title{font-family:var(--font-display);font-size:1.4rem;font-weight:400;}
     .page-actions-right{display:flex;gap:8px;flex-wrap:wrap;align-items:center;}
-
-    /* Product thumb */
     .product-thumb-mini{width:40px;height:40px;object-fit:cover;border-radius:2px;background:var(--cream);flex-shrink:0;}
     .empty-row td{text-align:center;padding:48px;color:var(--gray-light);font-style:italic;font-size:.82rem;}
-
-    /* Color swatch */
-    .color-swatch{width:24px;height:24px;border-radius:3px;border:2px solid rgba(255,255,255,.5);
-    box-shadow:0 0 0 1px rgba(0,0,0,.1);display:inline-block;vertical-align:middle;}
-
-    /* Search bar */
-    .search-bar{display:flex;gap:8px;margin-bottom:20px;flex-wrap:wrap;}
-    .search-bar input{flex:1;min-width:200px;padding:9px 13px;border:1px solid var(--beige);
-    background:var(--white);font-family:var(--font-body);font-size:.82rem;border-radius:2px;outline:none;}
-    .search-bar input:focus{border-color:var(--gold);}
-
-    /* Star rating */
     .stars{color:var(--gold);font-size:1rem;letter-spacing:2px;}
-
-    /* Responsive */
-    @media(max-width:768px){
-      .sidebar{transform:translateX(-100%);}
-      .sidebar.open{transform:translateX(0);}
-      .admin-main{margin-left:0;}
-      .stats-grid{grid-template-columns:1fr 1fr;}
-      .form-grid{grid-template-columns:1fr;}
-      .admin-content{padding:20px 16px;}
-    }
+    @media(max-width:768px){.sidebar{transform:translateX(-100%)}.admin-main{margin-left:0}.stats-grid{grid-template-columns:1fr 1fr}.form-grid{grid-template-columns:1fr}.admin-content{padding:20px 16px}}
   </style>
   {% block extra_head %}{% endblock %}
 </head>
 <body>
-  <aside class="sidebar" id="sidebar">
-    <div class="sidebar-logo">HENOSIS<span>Admin Panel</span></div>
-    <nav class="sidebar-nav">
-      <div class="sidebar-section">Main</div>
-      <a href="{{ url_for('admin_dashboard') }}" class="sidebar-link {% if request.endpoint=='admin_dashboard' %}active{% endif %}">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
-        Dashboard
-      </a>
 
-      <div class="sidebar-section">Catalogue</div>
-      <a href="{{ url_for('admin_products') }}" class="sidebar-link {% if 'product' in request.endpoint %}active{% endif %}">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><polygon points="12,2 15.09,8.26 22,9.27 17,14.14 18.18,21.02 12,17.77 5.82,21.02 7,14.14 2,9.27 8.91,8.26"/></svg>
-        Products
-      </a>
-      <a href="{{ url_for('admin_reviews') }}" class="sidebar-link {% if 'review' in request.endpoint %}active{% endif %}">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg>
-        Reviews
-        {% set pending_reviews = get_reviews()|selectattr('approved','eq','false')|list|length %}
-        {% if pending_reviews > 0 %}<span class="sidebar-badge">{{ pending_reviews }}</span>{% endif %}
-      </a>
-
-      <div class="sidebar-section">Sales</div>
-      <a href="{{ url_for('admin_orders') }}" class="sidebar-link {% if 'order' in request.endpoint %}active{% endif %}">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M6 2L3 6v14a2 2 0 002 2h14a2 2 0 002-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 01-8 0"/></svg>
-        Orders
-        {% set pending_orders = get_orders()|selectattr('status','eq','Pending')|list|length %}
-        {% if pending_orders > 0 %}<span class="sidebar-badge">{{ pending_orders }}</span>{% endif %}
-      </a>
-      <a href="{{ url_for('admin_customers') }}" class="sidebar-link {% if 'customer' in request.endpoint %}active{% endif %}">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87"/><path d="M16 3.13a4 4 0 010 7.75"/></svg>
-        Customers
-      </a>
-      <a href="{{ url_for('admin_discounts') }}" class="sidebar-link {% if 'discount' in request.endpoint %}active{% endif %}">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M20.59 13.41l-7.17 7.17a2 2 0 01-2.83 0L2 12V2h10l8.59 8.59a2 2 0 010 2.82z"/><line x1="7" y1="7" x2="7.01" y2="7"/></svg>
-        Discount Codes
-      </a>
-
-      <div class="sidebar-section">Config</div>
-      <a href="{{ url_for('admin_settings') }}" class="sidebar-link {% if request.endpoint=='admin_settings' %}active{% endif %}">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-4 0v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83-2.83l.06-.06A1.65 1.65 0 004.68 15a1.65 1.65 0 00-1.51-1H3a2 2 0 010-4h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 012.83-2.83l.06.06A1.65 1.65 0 009 4.68a1.65 1.65 0 001-1.51V3a2 2 0 014 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 2.83l-.06.06A1.65 1.65 0 0019.4 9a1.65 1.65 0 001.51 1H21a2 2 0 010 4h-.09a1.65 1.65 0 00-1.51 1z"/></svg>
-        Site Settings
-      </a>
-      <a href="{{ url_for('admin_change_password') }}" class="sidebar-link {% if 'password' in request.endpoint %}active{% endif %}">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0110 0v4"/></svg>
-        Change Password
-      </a>
-      <a href="{{ url_for('index') }}" class="sidebar-link" target="_blank">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M18 13v6a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
-        View Store
-      </a>
-    </nav>
-    <div class="sidebar-footer">
-      <a href="{{ url_for('admin_logout') }}">Log Out</a>
+<!-- Quick Search Overlay -->
+<div class="search-overlay" id="searchOverlay" onclick="if(event.target===this)closeSearch()">
+  <div class="search-box">
+    <div class="search-input-wrap">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+      <input id="searchInput" placeholder="Search products, orders, customers…" autocomplete="off"/>
+      <span class="search-kbd">ESC</span>
     </div>
-  </aside>
-
-  <div class="admin-main">
-    <div class="admin-topbar">
-      <div class="topbar-left">
-        <h1>{% block page_title %}Dashboard{% endblock %}</h1>
-      </div>
-      <div class="topbar-right">
-        <span class="topbar-badge">{{ settings.get('logo_text','HENOSIS') }}</span>
-        <a href="{{ url_for('admin_logout') }}" style="font-size:.62rem;letter-spacing:.1em;text-transform:uppercase;color:var(--gray-mid);transition:color .2s;" onmouseover="this.style.color='var(--charcoal)'" onmouseout="this.style.color='var(--gray-mid)'">Logout</a>
-      </div>
-    </div>
-    <div class="admin-content">
-      {% with messages = get_flashed_messages(with_categories=true) %}
-        {% if messages %}{% for cat,msg in messages %}
-          <div class="alert alert-{{ 'success' if cat=='success' else 'error' }}">{{ msg }}</div>
-        {% endfor %}{% endif %}
-      {% endwith %}
-      {% block content %}{% endblock %}
+    <div class="search-results" id="searchResults">
+      <div class="search-empty">Press / to search anywhere in admin</div>
     </div>
   </div>
+</div>
+
+<aside class="sidebar" id="sidebar">
+  <div class="sidebar-logo">HENOSIS<span>Admin Panel</span></div>
+  <nav class="sidebar-nav">
+    <div class="sidebar-section">Main</div>
+    <a href="{{ url_for('admin_dashboard') }}" class="sidebar-link {% if request.endpoint=='admin_dashboard' %}active{% endif %}">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
+      Dashboard
+    </a>
+
+    <div class="sidebar-section">Catalogue</div>
+    <a href="{{ url_for('admin_products') }}" class="sidebar-link {% if 'product' in request.endpoint %}active{% endif %}">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><polygon points="12,2 15.09,8.26 22,9.27 17,14.14 18.18,21.02 12,17.77 5.82,21.02 7,14.14 2,9.27 8.91,8.26"/></svg>
+      Products
+    </a>
+    <a href="{{ url_for('admin_reviews') }}" class="sidebar-link {% if 'review' in request.endpoint %}active{% endif %}">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg>
+      Reviews
+      {% set pending_reviews = get_reviews()|selectattr('approved','eq',False)|list|length %}
+      {% if pending_reviews > 0 %}<span class="sidebar-badge">{{ pending_reviews }}</span>{% endif %}
+    </a>
+    <a href="{{ url_for('admin_pages') }}" class="sidebar-link {% if 'pages' in request.endpoint or 'page' in request.endpoint %}active{% endif %}">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+      Custom Pages
+    </a>
+
+    <div class="sidebar-section">Sales</div>
+    <a href="{{ url_for('admin_orders') }}" class="sidebar-link {% if 'order' in request.endpoint %}active{% endif %}">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M6 2L3 6v14a2 2 0 002 2h14a2 2 0 002-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 01-8 0"/></svg>
+      Orders
+      {% set pending_orders = get_orders()|selectattr('status','eq','Pending')|list|length %}
+      {% if pending_orders > 0 %}<span class="sidebar-badge red">{{ pending_orders }}</span>{% endif %}
+    </a>
+    <a href="{{ url_for('admin_customers') }}" class="sidebar-link {% if 'customer' in request.endpoint %}active{% endif %}">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87"/><path d="M16 3.13a4 4 0 010 7.75"/></svg>
+      Customers
+    </a>
+    <a href="{{ url_for('admin_discounts') }}" class="sidebar-link {% if 'discount' in request.endpoint %}active{% endif %}">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M20.59 13.41l-7.17 7.17a2 2 0 01-2.83 0L2 12V2h10l8.59 8.59a2 2 0 010 2.82z"/><line x1="7" y1="7" x2="7.01" y2="7"/></svg>
+      Discount Codes
+    </a>
+    <a href="{{ url_for('admin_expenses') }}" class="sidebar-link {% if 'expense' in request.endpoint %}active{% endif %}">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6"/></svg>
+      Expenses & P&L
+    </a>
+      <a href="{{ url_for('admin_ads') }}" class="sidebar-link {% if 'ads' in request.endpoint %}active{% endif %}">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 21V5a2 2 0 00-2-2h-4a2 2 0 00-2 2v16"/></svg>
+        Ad Manager
+      </a>
+      <a href="{{ url_for('admin_media') }}" class="sidebar-link {% if 'media' in request.endpoint %}active{% endif %}">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
+        Media & Photos
+      </a>
+
+    <div class="sidebar-section">Insights</div>
+    <a href="{{ url_for('admin_analytics') }}" class="sidebar-link {% if request.endpoint=='admin_analytics' %}active{% endif %}">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
+      Analytics
+    </a>
+    <a href="{{ url_for('admin_activity') }}" class="sidebar-link {% if 'activity' in request.endpoint %}active{% endif %}">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+      Activity Log
+    </a>
+
+    <div class="sidebar-section">Config</div>
+    <a href="{{ url_for('admin_settings') }}" class="sidebar-link {% if request.endpoint=='admin_settings' %}active{% endif %}">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-4 0v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83-2.83l.06-.06A1.65 1.65 0 004.68 15a1.65 1.65 0 00-1.51-1H3a2 2 0 010-4h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 012.83-2.83l.06.06A1.65 1.65 0 009 4.68a1.65 1.65 0 001-1.51V3a2 2 0 014 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 2.83l-.06.06A1.65 1.65 0 0019.4 9a1.65 1.65 0 001.51 1H21a2 2 0 010 4h-.09a1.65 1.65 0 00-1.51 1z"/></svg>
+      Site Settings
+    </a>
+    <a href="{{ url_for('admin_change_password') }}" class="sidebar-link {% if 'password' in request.endpoint %}active{% endif %}">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0110 0v4"/></svg>
+      Change Password
+    </a>
+    <a href="{{ url_for('index') }}" class="sidebar-link" target="_blank">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M18 13v6a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
+      View Store
+    </a>
+  </nav>
+  <div class="sidebar-footer"><a href="{{ url_for('admin_logout') }}">Log Out</a></div>
+</aside>
+
+<div class="admin-main">
+  <div class="admin-topbar">
+    <div class="topbar-left">
+      <h1>{% block page_title %}Dashboard{% endblock %}</h1>
+    </div>
+    <div class="topbar-right">
+      <!-- Search shortcut -->
+      <button onclick="openSearch()" style="display:flex;align-items:center;gap:8px;padding:7px 12px;border:1px solid var(--beige);background:var(--cream);border-radius:2px;color:var(--gray-mid);font-family:var(--font-body);font-size:.72rem;cursor:pointer;" title="Press / to search">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+        Search <span style="font-size:.6rem;padding:2px 5px;border:1px solid var(--beige);border-radius:2px;margin-left:4px;">/</span>
+      </button>
+      <!-- Notification bell -->
+      <div class="notif-wrap">
+        <button class="notif-btn" id="notifBtn" onclick="toggleNotifPanel()" title="Notifications">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M18 8A6 6 0 006 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 01-3.46 0"/></svg>
+          <span class="notif-dot" id="notifDot"></span>
+        </button>
+        <div class="notif-panel" id="notifPanel">
+          <div class="notif-header">
+            <span>Notifications</span>
+            <button onclick="markAllRead()">Mark all read</button>
+          </div>
+          <div id="notifList"><div style="padding:20px;text-align:center;color:var(--gray-light);font-size:.82rem;">Loading…</div></div>
+        </div>
+      </div>
+      <span class="topbar-badge">{{ settings.get('logo_text','HENOSIS') }}</span>
+      <a href="{{ url_for('admin_logout') }}" style="font-size:.62rem;letter-spacing:.1em;text-transform:uppercase;color:var(--gray-mid);">Logout</a>
+    </div>
+  </div>
+
+  <div class="admin-content">
+    {% with messages = get_flashed_messages(with_categories=true) %}
+      {% if messages %}{% for cat,msg in messages %}
+        <div class="alert alert-{{ 'success' if cat=='success' else 'error' }}">{{ msg }}</div>
+      {% endfor %}{% endif %}
+    {% endwith %}
+    {% block content %}{% endblock %}
+  </div>
+</div>
+
+<script>
+// ── Quick Search ─────────────────────────────────────────────────────────────
+let searchTimer;
+function openSearch(){document.getElementById('searchOverlay').classList.add('open');document.getElementById('searchInput').focus();}
+function closeSearch(){document.getElementById('searchOverlay').classList.remove('open');document.getElementById('searchInput').value='';document.getElementById('searchResults').innerHTML='<div class="search-empty">Press / to search anywhere in admin</div>';}
+document.addEventListener('keydown',e=>{
+  if(e.key==='/'&&document.activeElement.tagName!=='INPUT'&&document.activeElement.tagName!=='TEXTAREA'){e.preventDefault();openSearch();}
+  if(e.key==='Escape')closeSearch();
+});
+document.getElementById('searchInput').addEventListener('input',function(){
+  clearTimeout(searchTimer);
+  const q=this.value.trim();
+  if(!q){document.getElementById('searchResults').innerHTML='<div class="search-empty">Type to search…</div>';return;}
+  searchTimer=setTimeout(()=>doSearch(q),250);
+});
+async function doSearch(q){
+  const r=await fetch('/henosis-admin/search?q='+encodeURIComponent(q));
+  const d=await r.json();
+  const el=document.getElementById('searchResults');
+  let html='';
+  if(d.products.length){
+    html+='<div class="search-group"><div class="search-group-title">Products</div>';
+    d.products.forEach(p=>{html+=`<a href="${p.url}" class="search-item" onclick="closeSearch()"><div class="search-item-icon"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><polygon points="12,2 15.09,8.26 22,9.27 17,14.14 18.18,21.02 12,17.77 5.82,21.02 7,14.14 2,9.27 8.91,8.26"/></svg></div><div><div class="search-item-name">${p.name}</div><div class="search-item-sub">₹${Number(p.price).toLocaleString('en-IN')}</div></div></a>`;});
+    html+='</div>';
+  }
+  if(d.orders.length){
+    html+='<div class="search-group"><div class="search-group-title">Orders</div>';
+    d.orders.forEach(o=>{html+=`<a href="${o.url}" class="search-item" onclick="closeSearch()"><div class="search-item-icon" style="background:#e8f4e8;color:#2d7a2d;"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M6 2L3 6v14a2 2 0 002 2h14a2 2 0 002-2V6l-3-4z"/></svg></div><div><div class="search-item-name">#${o.id} — ${o.name}</div><div class="search-item-sub">₹${Number(o.total).toLocaleString('en-IN')}</div></div></a>`;});
+    html+='</div>';
+  }
+  if(d.customers.length){
+    html+='<div class="search-group"><div class="search-group-title">Customers</div>';
+    d.customers.forEach(c=>{html+=`<a href="${c.url}" class="search-item" onclick="closeSearch()"><div class="search-item-icon"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="12" cy="8" r="4"/><path d="M4 20v-1a8 8 0 0116 0v1"/></svg></div><div><div class="search-item-name">${c.name}</div><div class="search-item-sub">${c.email}</div></div></a>`;});
+    html+='</div>';
+  }
+  if(!html) html='<div class="search-empty">No results for "'+q+'"</div>';
+  el.innerHTML=html;
+}
+
+// ── Notifications ─────────────────────────────────────────────────────────────
+function toggleNotifPanel(){
+  const p=document.getElementById('notifPanel');
+  const isOpen=p.classList.contains('open');
+  p.classList.toggle('open');
+  if(!isOpen) loadNotifications();
+}
+document.addEventListener('click',e=>{
+  if(!e.target.closest('.notif-wrap')) document.getElementById('notifPanel').classList.remove('open');
+});
+async function loadNotifications(){
+  const r=await fetch('/henosis-admin/api/notifications');
+  const d=await r.json();
+  const dot=document.getElementById('notifDot');
+  dot.className='notif-dot'+(d.unread>0?' show':'');
+  const list=document.getElementById('notifList');
+  if(!d.notifications.length){list.innerHTML='<div style="padding:20px;text-align:center;color:var(--gray-light);font-size:.82rem;font-style:italic;">No notifications</div>';return;}
+  list.innerHTML=d.notifications.map(n=>{
+    const icons={order:'🛍️',product:'💎',info:'ℹ️'};
+    const time=n.created_at?n.created_at.toString().slice(0,16):'';
+    const unread=!n.read?' unread':'';
+    const link=n.link?`href="${n.link}"`:'';
+    return `<a ${link} class="notif-item${unread}"><div class="notif-icon ${n.type||'info'}">${icons[n.type]||'📌'}</div><div style="flex:1;"><div class="notif-title">${n.title}</div><div class="notif-body">${n.body}</div><div class="notif-time">${time}</div></div></a>`;
+  }).join('');
+}
+async function markAllRead(){
+  await fetch('/henosis-admin/notifications/read',{method:'POST'});
+  document.getElementById('notifDot').className='notif-dot';
+  loadNotifications();
+}
+
+// ── Poll for updates every 30s ────────────────────────────────────────────────
+async function pollStats(){
+  try{
+    const r=await fetch('/henosis-admin/api/stats');
+    const d=await r.json();
+    const dot=document.getElementById('notifDot');
+    if(d.unread_notifications>0) dot.className='notif-dot show';
+  }catch(e){}
+}
+setInterval(pollStats, 30000);
+pollStats();
+</script>
+{% block extra_scripts %}{% endblock %}
 </body>
 </html>

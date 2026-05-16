@@ -1,0 +1,25 @@
+{% extends "admin/base.html" %}
+{% block page_title %}Activity Log{% endblock %}
+{% block content %}
+<div class="page-actions">
+  <div class="page-title">Activity Log ({{ logs|length }})</div>
+</div>
+<div class="card">
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>Time</th><th>Action</th><th>Detail</th></tr></thead>
+      <tbody>
+        {% for log in logs %}
+        <tr>
+          <td style="font-size:.72rem;color:var(--gray-mid);white-space:nowrap;">{{ log.created_at|string|truncate(19,True,'') }}</td>
+          <td style="font-weight:500;font-size:.82rem;">{{ log.action }}</td>
+          <td style="font-size:.78rem;color:var(--gray-mid);">{{ log.detail }}</td>
+        </tr>
+        {% else %}
+        <tr class="empty-row"><td colspan="3">No activity recorded yet.</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}

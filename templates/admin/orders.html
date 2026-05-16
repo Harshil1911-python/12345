@@ -1,118 +1,111 @@
 {% extends "admin/base.html" %}
 {% block page_title %}Orders{% endblock %}
 {% block content %}
-
 <div class="page-actions">
   <div class="page-title">Orders ({{ orders|length }})</div>
   <div class="page-actions-right">
-    <div style="display:flex;gap:6px;flex-wrap:wrap;">
-      {% for sf in ['','Pending','Processing','Shipped','Delivered','Cancelled'] %}
-      <a href="{{ url_for('admin_orders', status=sf) }}"
-         style="padding:5px 12px;font-size:.6rem;letter-spacing:.1em;text-transform:uppercase;
-         border:1px solid {% if status_filter==sf %}var(--charcoal){% else %}var(--beige){% endif %};
-         background:{% if status_filter==sf %}var(--charcoal){% else %}var(--white){% endif %};
-         color:{% if status_filter==sf %}var(--ivory){% else %}var(--gray-mid){% endif %};
-         border-radius:2px;transition:all .2s;">{{ sf if sf else 'All' }}</a>
-      {% endfor %}
-    </div>
-    <a href="{{ url_for('admin_export_orders') }}" class="btn btn-outline btn-sm">
-      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
-      Export CSV
-    </a>
+    <!-- Bulk status update -->
+    <form method="POST" action="{{ url_for('admin_bulk_orders') }}" id="bulkForm" style="display:flex;gap:6px;align-items:center;">
+      <select name="bulk_status" style="padding:7px 10px;border:1px solid var(--beige);font-family:var(--font-body);font-size:.72rem;background:var(--white);border-radius:2px;outline:none;">
+        <option value="">Bulk action…</option>
+        {% for st in ['Pending','Processing','Shipped','Delivered','Cancelled'] %}
+        <option value="{{ st }}">Mark as {{ st }}</option>{% endfor %}
+      </select>
+      <button type="button" onclick="submitBulk()" class="btn btn-outline btn-sm">Apply</button>
+    </form>
+    <a href="{{ url_for('admin_export_orders') }}" class="btn btn-outline btn-sm">↓ CSV</a>
   </div>
+</div>
+
+<!-- Status filters -->
+<div style="display:flex;gap:5px;margin-bottom:16px;flex-wrap:wrap;">
+  {% for sf in ['','Pending','Processing','Shipped','Delivered','Cancelled'] %}
+  <a href="{{ url_for('admin_orders',status=sf) }}"
+     style="padding:6px 14px;font-size:.62rem;letter-spacing:.1em;text-transform:uppercase;border-radius:2px;transition:all .2s;border:1px solid {% if status_filter==sf %}var(--charcoal){% else %}var(--beige){% endif %};background:{% if status_filter==sf %}var(--charcoal){% else %}var(--white){% endif %};color:{% if status_filter==sf %}var(--ivory){% else %}var(--gray-mid){% endif %};">
+    {{ sf or 'All' }}
+  </a>{% endfor %}
 </div>
 
 {% if orders %}
 {% for order in orders %}
-<div class="card" style="margin-bottom:16px;">
-  <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:20px;flex-wrap:wrap;">
+<div class="card" style="margin-bottom:14px;">
+  <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:16px;flex-wrap:wrap;">
 
-    <!-- Order Info -->
-    <div style="flex:1;min-width:0;">
-      <div style="display:flex;align-items:center;gap:12px;margin-bottom:14px;flex-wrap:wrap;">
-        <span style="font-family:'Cormorant Garamond',serif;font-size:1.3rem;color:var(--gold);">#{{ order.id }}</span>
-        {% if order.status=='Delivered' %}<span class="badge badge-success">{{ order.status }}</span>
-        {% elif order.status=='Shipped' %}<span class="badge badge-gold">{{ order.status }}</span>
-        {% elif order.status=='Cancelled' %}<span class="badge badge-danger">{{ order.status }}</span>
-        {% elif order.status=='Processing' %}<span class="badge badge-dark">{{ order.status }}</span>
-        {% else %}<span class="badge badge-warning">{{ order.status }}</span>{% endif %}
-        {% if order.payment_status=='Paid' %}<span class="badge badge-success">Paid</span>
-        {% elif order.payment_status=='Refunded' %}<span class="badge badge-gray">Refunded</span>
-        {% else %}<span class="badge badge-danger">Unpaid</span>{% endif %}
-        <span style="font-size:.68rem;color:var(--gray-light);">{{ order.created_at|string|truncate(16,True,'') }}</span>
-      </div>
-
-      <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:14px 28px;">
-        <div>
-          <div style="font-size:.58rem;letter-spacing:.12em;text-transform:uppercase;color:var(--gray-light);margin-bottom:4px;">Customer</div>
-          <div style="font-weight:500;font-size:.85rem;">{{ order.customer_name }}</div>
-          <div style="font-size:.75rem;color:var(--gray-mid);">{{ order.email }}</div>
-          <div style="font-size:.75rem;color:var(--gray-mid);">{{ order.phone }}</div>
+    <!-- Checkbox + info -->
+    <div style="display:flex;gap:14px;flex:1;min-width:0;">
+      <input type="checkbox" class="order-checkbox" value="{{ order.id }}" style="margin-top:4px;accent-color:var(--gold);width:15px;height:15px;flex-shrink:0;"/>
+      <div style="min-width:0;">
+        <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:10px;">
+          <a href="{{ url_for('admin_order_detail',oid=order.id) }}" style="font-family:var(--font-display);font-size:1.25rem;color:var(--gold);">#{{ order.id }}</a>
+          {% if order.status=='Delivered' %}<span class="badge badge-success">{{ order.status }}</span>
+          {% elif order.status=='Shipped' %}<span class="badge badge-gold">{{ order.status }}</span>
+          {% elif order.status=='Cancelled' %}<span class="badge badge-danger">{{ order.status }}</span>
+          {% elif order.status=='Processing' %}<span class="badge badge-dark">{{ order.status }}</span>
+          {% else %}<span class="badge badge-warning">{{ order.status }}</span>{% endif %}
+          {% if order.payment_status=='Paid' %}<span class="badge badge-success">Paid</span>
+          {% elif order.payment_status=='Refunded' %}<span class="badge badge-gray">Refunded</span>
+          {% else %}<span class="badge badge-danger">Unpaid</span>{% endif %}
+          <span style="font-size:.68rem;color:var(--gray-light);">{{ order.created_at|string|truncate(16,True,'') }}</span>
         </div>
-        <div>
-          <div style="font-size:.58rem;letter-spacing:.12em;text-transform:uppercase;color:var(--gray-light);margin-bottom:4px;">Ship to</div>
-          <div style="font-size:.8rem;line-height:1.6;">{{ order.address }}<br>{{ order.city }} — {{ order.pincode }}</div>
+        <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:10px 24px;">
+          <div><div style="font-size:.58rem;letter-spacing:.1em;text-transform:uppercase;color:var(--gray-light);margin-bottom:3px;">Customer</div>
+            <div style="font-weight:500;font-size:.83rem;">{{ order.customer_name }}</div>
+            <div style="font-size:.75rem;color:var(--gray-mid);">{{ order.phone }}</div></div>
+          <div><div style="font-size:.58rem;letter-spacing:.1em;text-transform:uppercase;color:var(--gray-light);margin-bottom:3px;">City</div>
+            <div style="font-size:.83rem;">{{ order.city }}</div></div>
+          <div><div style="font-size:.58rem;letter-spacing:.1em;text-transform:uppercase;color:var(--gray-light);margin-bottom:3px;">Items</div>
+            <div style="font-size:.75rem;color:var(--gray-dark);max-width:220px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">{{ order["items"] or "" }}</div></div>
+          <div><div style="font-size:.58rem;letter-spacing:.1em;text-transform:uppercase;color:var(--gray-light);margin-bottom:3px;">Total</div>
+            <div style="font-family:var(--font-display);font-size:1.25rem;color:var(--gold);">₹{{ "{:,.0f}".format(order.total|float) }}</div></div>
         </div>
-        <div>
-          <div style="font-size:.58rem;letter-spacing:.12em;text-transform:uppercase;color:var(--gray-light);margin-bottom:4px;">Items</div>
-          <div style="font-size:.77rem;line-height:1.6;color:var(--gray-dark);">{{ order.items }}</div>
-        </div>
-        <div>
-          <div style="font-size:.58rem;letter-spacing:.12em;text-transform:uppercase;color:var(--gray-light);margin-bottom:4px;">Amount</div>
-          {% if order.discount_amount and order.discount_amount|float > 0 %}
-          <div style="font-size:.72rem;color:var(--gray-mid);">Subtotal: ₹{{ "{:,.0f}".format(order.subtotal|float) }}</div>
-          <div style="font-size:.72rem;color:#2d7a2d;">Discount: -₹{{ "{:,.0f}".format(order.discount_amount|float) }}</div>
-          {% endif %}
-          <div style="font-family:'Cormorant Garamond',serif;font-size:1.35rem;color:var(--gold);">₹{{ "{:,.0f}".format(order.total|float) }}</div>
-        </div>
-        {% if order.note %}
-        <div>
-          <div style="font-size:.58rem;letter-spacing:.12em;text-transform:uppercase;color:var(--gray-light);margin-bottom:4px;">Customer Note</div>
-          <div style="font-size:.78rem;color:var(--gray-mid);font-style:italic;">{{ order.note }}</div>
-        </div>
-        {% endif %}
       </div>
     </div>
 
-    <!-- Update Form -->
-    <form method="POST" action="{{ url_for('admin_update_order', oid=order.id) }}"
-          style="display:flex;flex-direction:column;gap:9px;min-width:190px;flex-shrink:0;">
-      <div>
-        <label style="font-size:.58rem;letter-spacing:.12em;text-transform:uppercase;color:var(--gray-mid);display:block;margin-bottom:5px;">Order Status</label>
-        <select name="status" style="width:100%;padding:8px 11px;border:1px solid var(--beige);font-family:'Raleway',sans-serif;font-size:.8rem;background:var(--ivory);border-radius:2px;outline:none;">
-          {% for st in ['Pending','Processing','Shipped','Delivered','Cancelled'] %}
-          <option value="{{ st }}" {% if order.status==st %}selected{% endif %}>{{ st }}</option>
-          {% endfor %}
-        </select>
-      </div>
-      <div>
-        <label style="font-size:.58rem;letter-spacing:.12em;text-transform:uppercase;color:var(--gray-mid);display:block;margin-bottom:5px;">Payment</label>
-        <select name="payment_status" style="width:100%;padding:8px 11px;border:1px solid var(--beige);font-family:'Raleway',sans-serif;font-size:.8rem;background:var(--ivory);border-radius:2px;outline:none;">
-          {% for ps in ['Unpaid','Paid','Refunded'] %}
-          <option value="{{ ps }}" {% if order.payment_status==ps %}selected{% endif %}>{{ ps }}</option>
-          {% endfor %}
-        </select>
-      </div>
-      <div>
-        <label style="font-size:.58rem;letter-spacing:.12em;text-transform:uppercase;color:var(--gray-mid);display:block;margin-bottom:5px;">Admin Note</label>
-        <input type="text" name="note" value="{{ order.note or '' }}" placeholder="Internal note..."
-               style="width:100%;padding:8px 11px;border:1px solid var(--beige);font-family:'Raleway',sans-serif;font-size:.78rem;background:var(--ivory);border-radius:2px;outline:none;"/>
-      </div>
-      <div style="display:flex;gap:6px;">
-        <button type="submit" class="btn btn-primary btn-sm" style="flex:1;">Update</button>
-        <form method="POST" action="{{ url_for('admin_delete_order', oid=order.id) }}"
-              onsubmit="return confirm('Delete order #{{ order.id }}? This cannot be undone.')">
-          <button type="submit" class="btn btn-danger btn-sm">Del</button>
-        </form>
-      </div>
-    </form>
+    <!-- Quick actions -->
+    <div style="display:flex;flex-direction:column;gap:6px;flex-shrink:0;">
+      <a href="{{ url_for('admin_order_detail',oid=order.id) }}" class="btn btn-outline btn-sm">View Details</a>
+      <a href="{{ url_for('admin_order_invoice',oid=order.id) }}" target="_blank" class="btn btn-outline btn-sm">🖨 Invoice</a>
+      {% if order.phone %}
+      <a href="https://wa.me/91{{ order.phone|replace(' ','')|replace('+91','') }}?text=Hi {{ order.customer_name }}, your Henosis order %23{{ order.id }} update."
+         target="_blank" class="btn btn-outline btn-sm" style="color:#25d366;border-color:#25d366;">WhatsApp</a>
+      {% endif %}
+      <form method="POST" action="{{ url_for('admin_delete_order',oid=order.id) }}" onsubmit="return confirm('Delete order #{{ order.id }}?')">
+        <button type="submit" class="btn btn-danger btn-sm btn-full">Delete</button>
+      </form>
+    </div>
   </div>
 </div>
 {% endfor %}
+
+<div style="margin-top:8px;font-size:.72rem;color:var(--gray-light);text-align:center;">
+  Select orders with checkboxes, then use bulk action above.
+</div>
 {% else %}
 <div class="card" style="text-align:center;padding:60px;">
   <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="0.8" style="margin:0 auto 16px;color:var(--beige)"><path d="M6 2L3 6v14a2 2 0 002 2h14a2 2 0 002-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 01-8 0"/></svg>
-  <p style="font-style:italic;color:var(--gray-mid);">No orders {{ 'with status "'+status_filter+'"' if status_filter else 'yet' }}.</p>
+  <p style="font-style:italic;color:var(--gray-mid);">No orders{% if status_filter %} with status "{{ status_filter }}"{% endif %}.</p>
 </div>
 {% endif %}
+
+<script>
+function submitBulk() {
+  const checked = [...document.querySelectorAll('.order-checkbox:checked')].map(c => c.value);
+  if (!checked.length) { alert('Select at least one order'); return; }
+  const status = document.querySelector('[name=bulk_status]').value;
+  if (!status) { alert('Choose a bulk action'); return; }
+  const form = document.getElementById('bulkForm');
+  checked.forEach(id => {
+    const inp = document.createElement('input');
+    inp.type = 'hidden'; inp.name = 'order_ids'; inp.value = id;
+    form.appendChild(inp);
+  });
+  if (confirm(`Mark ${checked.length} order(s) as ${status}?`)) form.submit();
+}
+// Select-all on shift+click
+document.querySelectorAll('.order-checkbox').forEach(cb => {
+  cb.addEventListener('change', function() {
+    this.closest('.card').style.background = this.checked ? '#fffcf0' : '';
+  });
+});
+</script>
 {% endblock %}

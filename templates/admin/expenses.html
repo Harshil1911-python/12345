@@ -1,0 +1,82 @@
+{% extends "admin/base.html" %}
+{% block page_title %}Expenses & P&L{% endblock %}
+{% block content %}
+
+<div class="stats-grid" style="grid-template-columns:repeat(3,1fr);">
+  <div class="stat-card accent">
+    <div class="stat-label">Total Revenue (Paid)</div>
+    <div class="stat-value">₹{{ "{:,.0f}".format(revenue) }}</div>
+    <div class="stat-sub">Confirmed payments</div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-label">Total Expenses</div>
+    <div class="stat-value">₹{{ "{:,.0f}".format(total) }}</div>
+    <div class="stat-sub">All recorded expenses</div>
+  </div>
+  <div class="stat-card {% if profit > 0 %}gold{% endif %}">
+    <div class="stat-label">Net Profit</div>
+    <div class="stat-value">₹{{ "{:,.0f}".format(profit) }}</div>
+    <div class="stat-sub">Revenue − Expenses</div>
+  </div>
+</div>
+
+<div style="display:grid;grid-template-columns:2fr 1fr;gap:20px;align-items:start;">
+
+  <!-- Expense list -->
+  <div class="card">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;padding-bottom:12px;border-bottom:1px solid var(--beige);">
+      <span style="font-family:var(--font-display);font-size:1.05rem;">All Expenses</span>
+    </div>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>Date</th><th>Description</th><th>Category</th><th>Amount</th><th></th></tr></thead>
+        <tbody>
+          {% for e in expenses %}
+          <tr>
+            <td style="font-size:.75rem;color:var(--gray-mid);white-space:nowrap;">{{ e.expense_date or e.created_at|string|truncate(10,True,'') }}</td>
+            <td style="font-size:.85rem;">{{ e.description }}</td>
+            <td><span class="badge badge-gray">{{ e.category }}</span></td>
+            <td style="font-weight:500;color:var(--charcoal);">₹{{ "{:,.2f}".format(e.amount|float) }}</td>
+            <td>
+              <form method="POST" action="{{ url_for('admin_delete_expense', eid=e.id) }}" onsubmit="return confirm('Delete this expense?')">
+                <button type="submit" class="btn btn-danger btn-sm">Del</button>
+              </form>
+            </td>
+          </tr>
+          {% else %}
+          <tr class="empty-row"><td colspan="5">No expenses recorded yet.</td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- Add expense -->
+  <div class="card" style="position:sticky;top:90px;">
+    <div class="card-title">Add Expense</div>
+    <form method="POST" action="{{ url_for('admin_add_expense') }}">
+      <div class="form-group">
+        <label>Description *</label>
+        <input type="text" name="description" required placeholder="e.g. Packaging materials"/>
+      </div>
+      <div class="form-group">
+        <label>Amount (₹) *</label>
+        <input type="number" name="amount" required step="0.01" min="0" placeholder="500.00"/>
+      </div>
+      <div class="form-group">
+        <label>Category</label>
+        <select name="category" style="width:100%;padding:10px;border:1px solid var(--beige);font-family:'Raleway',sans-serif;font-size:.85rem;background:var(--ivory);border-radius:2px;outline:none;">
+          {% for cat in ['Packaging','Shipping','Materials','Marketing','Utilities','Platform Fees','Photography','Other'] %}
+          <option value="{{ cat }}">{{ cat }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="form-group">
+        <label>Date</label>
+        <input type="date" name="expense_date"/>
+      </div>
+      <button type="submit" class="btn btn-gold btn-full">Record Expense</button>
+    </form>
+  </div>
+</div>
+{% endblock %}

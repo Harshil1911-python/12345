@@ -1,0 +1,104 @@
+{% extends "admin/base.html" %}
+{% block page_title %}Custom Pages{% endblock %}
+{% block content %}
+<div class="page-actions">
+  <div class="page-title">Custom Pages</div>
+  <button onclick="document.getElementById('newPageForm').style.display='block';this.style.display='none'" class="btn btn-gold">+ New Page</button>
+</div>
+
+<!-- New page form (hidden by default) -->
+<div class="card" id="newPageForm" style="display:none;margin-bottom:20px;">
+  <div class="card-title">Create New Page</div>
+  <form method="POST" action="{{ url_for('admin_save_page') }}">
+    <input type="hidden" name="id" value=""/>
+    <div class="form-grid">
+      <div class="form-group">
+        <label>Page Title *</label>
+        <input type="text" name="title" required placeholder="e.g. Bridal Collection"/>
+      </div>
+      <div class="form-group">
+        <label>URL Slug *</label>
+        <input type="text" name="slug" required placeholder="bridal-collection" pattern="[a-z0-9\-]+"/>
+        <p class="form-hint">Lowercase letters, numbers, hyphens only. URL: /page/your-slug</p>
+      </div>
+    </div>
+    <div class="form-group form-full">
+      <label>Content (HTML allowed)</label>
+      <textarea name="content" rows="8" placeholder="Write your page content here. HTML is supported."></textarea>
+    </div>
+    <label class="form-check" style="margin-bottom:20px;">
+      <input type="checkbox" name="published" checked/>
+      <span>Published (visible to visitors)</span>
+    </label>
+    <div style="display:flex;gap:10px;">
+      <button type="submit" class="btn btn-gold">Create Page</button>
+      <button type="button" onclick="document.getElementById('newPageForm').style.display='none';document.querySelector('.btn-gold').style.display='inline-flex'" class="btn btn-outline">Cancel</button>
+    </div>
+  </form>
+</div>
+
+<!-- Pages list -->
+<div class="card">
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>Title</th><th>Slug</th><th>Status</th><th>Created</th><th>Actions</th></tr></thead>
+      <tbody>
+        {% for page in pages %}
+        <tr>
+          <td style="font-weight:500;">{{ page.title }}</td>
+          <td><code style="background:var(--cream);padding:2px 8px;border-radius:2px;font-size:.78rem;">/page/{{ page.slug }}</code></td>
+          <td>{% if page.published %}<span class="badge badge-success">Published</span>
+              {% else %}<span class="badge badge-danger">Draft</span>{% endif %}</td>
+          <td style="font-size:.72rem;color:var(--gray-mid);">{{ page.created_at|string|truncate(10,True,'') }}</td>
+          <td>
+            <div style="display:flex;gap:6px;">
+              <a href="{{ url_for('custom_page', slug=page.slug) }}" target="_blank" class="btn btn-outline btn-sm">View</a>
+              <button onclick="editPage('{{ page.id }}','{{ page.title|replace("'","\\'") }}','{{ page.slug }}','{{ page.published }}','{{ page.content|replace("'","\\'")|replace("\n","\\n")|truncate(50,True,"") }}')" class="btn btn-outline btn-sm">Edit</button>
+              <form method="POST" action="{{ url_for('admin_delete_page', pid=page.id) }}" onsubmit="return confirm('Delete {{ page.title }}?')">
+                <button type="submit" class="btn btn-danger btn-sm">Del</button>
+              </form>
+            </div>
+          </td>
+        </tr>
+        {% else %}
+        <tr class="empty-row"><td colspan="5">No custom pages yet.</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<!-- Edit modal -->
+<div id="editModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:1000;align-items:center;justify-content:center;padding:24px;">
+  <div style="background:var(--white);max-width:700px;width:100%;padding:32px;max-height:90vh;overflow-y:auto;border-radius:4px;">
+    <h3 style="font-family:var(--font-display);margin-bottom:20px;">Edit Page</h3>
+    <form method="POST" action="{{ url_for('admin_save_page') }}">
+      <input type="hidden" name="id" id="editId"/>
+      <div class="form-group"><label>Title</label><input type="text" name="title" id="editTitle" required/></div>
+      <div class="form-group"><label>Slug (cannot change)</label><input type="text" name="slug" id="editSlug" readonly style="background:var(--cream);"/></div>
+      <div class="form-group"><label>Content</label><textarea name="content" id="editContent" rows="10"></textarea></div>
+      <label class="form-check" style="margin-bottom:20px;"><input type="checkbox" name="published" id="editPublished"/><span>Published</span></label>
+      <div style="display:flex;gap:10px;">
+        <button type="submit" class="btn btn-gold">Save Changes</button>
+        <button type="button" onclick="document.getElementById('editModal').style.display='none'" class="btn btn-outline">Cancel</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<script>
+function editPage(id,title,slug,published,content) {
+  document.getElementById('editId').value=id;
+  document.getElementById('editTitle').value=title;
+  document.getElementById('editSlug').value=slug;
+  document.getElementById('editPublished').checked=(published==='True'||published===true);
+  document.getElementById('editContent').value=content;
+  document.getElementById('editModal').style.display='flex';
+}
+// auto-slug from title
+document.querySelector('[name="title"]').addEventListener('input',function(){
+  const slug=document.querySelector('[name="slug"]');
+  if(!slug.value) slug.value=this.value.toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,'');
+});
+</script>
+{% endblock %}

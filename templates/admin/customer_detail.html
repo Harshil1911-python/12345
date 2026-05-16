@@ -1,0 +1,88 @@
+{% extends "admin/base.html" %}
+{% block page_title %}Customer: {{ customer.name }}{% endblock %}
+{% block content %}
+<div class="page-actions">
+  <div class="page-title">{{ customer.name }}</div>
+  <a href="{{ url_for('admin_customers') }}" class="btn btn-outline">← Back</a>
+</div>
+
+<div style="display:grid;grid-template-columns:1fr 1fr;gap:20px;margin-bottom:20px;">
+  <div class="stat-card {% if customer.blocked %}gold{% else %}accent{% endif %}">
+    <div class="stat-label">Total Spent</div>
+    <div class="stat-value">₹{{ "{:,.0f}".format(customer.total_spent|float) }}</div>
+    <div class="stat-sub">{{ customer.total_orders }} order{{ 's' if customer.total_orders|int != 1 else '' }}</div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-label">Status</div>
+    <div class="stat-value" style="font-size:1.2rem;">{% if customer.blocked %}⛔ Blocked{% else %}✅ Active{% endif %}</div>
+    <div class="stat-sub">Since {{ customer.created_at|string|truncate(10,True,'') }}</div>
+  </div>
+</div>
+
+<div style="display:grid;grid-template-columns:2fr 1fr;gap:20px;align-items:start;">
+  <!-- Orders -->
+  <div>
+    <div class="card" style="margin-bottom:16px;">
+      <div class="card-title">Contact Information</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;">
+        <div><div style="font-size:.6rem;letter-spacing:.12em;text-transform:uppercase;color:var(--gray-light);margin-bottom:4px;">Email</div><div style="font-size:.88rem;">{{ customer.email }}</div></div>
+        <div><div style="font-size:.6rem;letter-spacing:.12em;text-transform:uppercase;color:var(--gray-light);margin-bottom:4px;">Phone</div><div style="font-size:.88rem;">{{ customer.phone or '—' }}</div></div>
+        <div><div style="font-size:.6rem;letter-spacing:.12em;text-transform:uppercase;color:var(--gray-light);margin-bottom:4px;">City</div><div style="font-size:.88rem;">{{ customer.city or '—' }}</div></div>
+        <div><div style="font-size:.6rem;letter-spacing:.12em;text-transform:uppercase;color:var(--gray-light);margin-bottom:4px;">Tags</div><div>{% for tag in customer.tags.split(',') if tag.strip() %}<span class="badge badge-gold" style="margin-right:4px;">{{ tag.strip() }}</span>{% else %}<span style="font-size:.78rem;color:var(--gray-light);">None</span>{% endfor %}</div></div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">Order History ({{ orders|length }})</div>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Order</th><th>Items</th><th>Total</th><th>Status</th><th>Date</th></tr></thead>
+          <tbody>
+            {% for o in orders %}
+            <tr>
+              <td><a href="{{ url_for('admin_order_detail', oid=o.id) }}" style="font-family:var(--font-display);color:var(--gold);">#{{ o.id }}</a></td>
+              <td style="font-size:.75rem;max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">{{ o.items }}</td>
+              <td style="font-weight:500;color:var(--gold);">₹{{ "{:,.0f}".format(o.total|float) }}</td>
+              <td>{% if o.status=='Delivered' %}<span class="badge badge-success">{{ o.status }}</span>
+                  {% elif o.status=='Shipped' %}<span class="badge badge-gold">{{ o.status }}</span>
+                  {% elif o.status=='Cancelled' %}<span class="badge badge-danger">{{ o.status }}</span>
+                  {% else %}<span class="badge badge-warning">{{ o.status }}</span>{% endif %}</td>
+              <td style="font-size:.72rem;color:var(--gray-mid);">{{ o.created_at|string|truncate(10,True,'') }}</td>
+            </tr>
+            {% else %}
+            <tr class="empty-row"><td colspan="5">No orders yet.</td></tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- Notes & actions -->
+  <div class="card" style="position:sticky;top:90px;">
+    <div class="card-title">Admin Notes & Tags</div>
+    <form method="POST" action="{{ url_for('admin_update_customer', cid=customer.id) }}">
+      <div class="form-group">
+        <label>Tags (comma separated)</label>
+        <input type="text" name="tags" value="{{ customer.tags or '' }}" placeholder="VIP, Wholesale, Gift…"/>
+        <p class="form-hint">e.g. VIP, Repeat, Gift, Wholesale</p>
+      </div>
+      <div class="form-group">
+        <label>Private Note (not visible to customer)</label>
+        <textarea name="private_note" rows="4" placeholder="Internal notes about this customer…">{{ customer.private_note or '' }}</textarea>
+      </div>
+      <label class="form-check" style="margin-bottom:20px;">
+        <input type="checkbox" name="blocked" {% if customer.blocked %}checked{% endif %}/>
+        <span><strong style="color:#c44;">Block this customer</strong> — prevents future orders</span>
+      </label>
+      <button type="submit" class="btn btn-gold btn-full">Save</button>
+    </form>
+    <div style="margin-top:12px;">
+      <form method="POST" action="{{ url_for('admin_delete_customer', cid=customer.id) }}"
+            onsubmit="return confirm('Delete {{ customer.name }}?')">
+        <button type="submit" class="btn btn-danger btn-full" style="text-align:center;">Delete Customer</button>
+      </form>
+    </div>
+  </div>
+</div>
+{% endblock %}

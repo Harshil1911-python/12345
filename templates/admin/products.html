@@ -2,43 +2,110 @@
 {% block page_title %}Products{% endblock %}
 {% block content %}
 <div class="page-actions">
-  <div class="page-title">All Products ({{ products|length }})</div>
+  <div class="page-title">Products ({{ products|length }})</div>
   <div class="page-actions-right">
+    <button onclick="toggleSortMode()" id="sortBtn" class="btn btn-outline btn-sm">⠿ Reorder</button>
     <a href="{{ url_for('admin_add_product') }}" class="btn btn-gold">+ Add Product</a>
   </div>
 </div>
+
 <div class="card">
   <div class="table-wrap">
-    <table>
-      <thead><tr><th>Product</th><th>Category</th><th>Price</th><th>Stock</th><th>Type</th><th>Featured</th><th>Actions</th></tr></thead>
-      <tbody>
-        {% if products %}{% for p in products %}
-        <tr>
+    <table id="productsTable">
+      <thead><tr><th id="dragHeader" style="display:none;width:32px;"></th><th>Product</th><th>Category</th><th>Price</th><th>Stock</th><th>Views</th><th>Type</th><th>Featured</th><th>Actions</th></tr></thead>
+      <tbody id="productBody">
+        {% if products %}
+        {% for p in products %}
+        <tr data-id="{{ p.id }}" class="product-row">
+          <td class="drag-handle" style="display:none;cursor:grab;color:var(--gray-light);font-size:1.2rem;text-align:center;">⠿</td>
           <td>
             <div style="display:flex;align-items:center;gap:12px;">
               {% if p.thumb %}<img src="{{ url_for('serve_product_image',img_id=p.thumb) }}" alt="{{ p.name }}" class="product-thumb-mini"/>
-              {% else %}<div class="product-thumb-mini" style="display:flex;align-items:center;justify-content:center;background:var(--cream);"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1" style="color:var(--beige)"><polygon points="12,2 15.09,8.26 22,9.27 17,14.14 18.18,21.02 12,17.77 5.82,21.02 7,14.14 2,9.27 8.91,8.26"/></svg></div>{% endif %}
-              <div><div style="font-weight:500;font-size:.85rem;">{{ p.name }}</div><div style="font-size:.68rem;color:var(--gray-mid);">ID: {{ p.id }}</div></div>
+              {% else %}<div class="product-thumb-mini" style="display:flex;align-items:center;justify-content:center;background:var(--cream);"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1" style="color:var(--beige)"><polygon points="12,2 15.09,8.26 22,9.27 17,14.14 18.18,21.02 12,17.77 5.82,21.02 7,14.14 2,9.27 8.91,8.26"/></svg></div>{% endif %}
+              <div>
+                <div style="font-weight:500;font-size:.85rem;">{{ p.name }}</div>
+                <div style="font-size:.68rem;color:var(--gray-mid);">{{ p.id }} · {{ p.img_count }} image{{ 's' if p.img_count != 1 else '' }}</div>
+              </div>
             </div>
           </td>
           <td><span style="font-size:.75rem;color:var(--gray-mid);">{{ p.category }}</span></td>
           <td style="font-weight:500;color:var(--gold);">₹{{ "{:,.0f}".format(p.price) }}</td>
-          <td>{% if p.stock==0 %}<span class="badge badge-danger">Sold Out</span>{% else %}<span class="badge badge-success">{{ p.stock }}</span>{% endif %}</td>
+          <td>{% if p.stock==0 %}<span class="badge badge-danger">Sold Out</span>{% elif p.stock<=3 %}<span class="badge badge-warning">{{ p.stock }}</span>{% else %}<span class="badge badge-success">{{ p.stock }}</span>{% endif %}</td>
+          <td style="font-size:.78rem;color:var(--gray-mid);">{{ p.views }}</td>
           <td>{% if p.only_one %}<span class="badge badge-gold">One of a Kind</span>{% else %}<span class="badge badge-gray">Standard</span>{% endif %}</td>
-          <td>{% if p.featured %}<span class="badge badge-success">Yes</span>{% else %}<span style="font-size:.75rem;color:var(--gray-light);">—</span>{% endif %}</td>
+          <td>{% if p.featured %}<span class="badge badge-success">✓</span>{% else %}<span style="color:var(--gray-light);">—</span>{% endif %}</td>
           <td>
-            <div style="display:flex;gap:6px;flex-wrap:wrap;">
+            <div style="display:flex;gap:5px;flex-wrap:wrap;">
               <a href="{{ url_for('admin_edit_product',pid=p.id) }}" class="btn btn-outline btn-sm">Edit</a>
-              <form method="POST" action="{{ url_for('admin_duplicate_product',pid=p.id) }}"><button type="submit" class="btn btn-outline btn-sm">Dupe</button></form>
+              <form method="POST" action="{{ url_for('admin_duplicate_product',pid=p.id) }}"><button type="submit" class="btn btn-outline btn-sm" title="Duplicate">⊕</button></form>
               <form method="POST" action="{{ url_for('admin_delete_product',pid=p.id) }}" onsubmit="return confirm('Delete {{ p.name|replace("'","\\'") }}?')"><button type="submit" class="btn btn-danger btn-sm">Del</button></form>
             </div>
           </td>
         </tr>
-        {% endfor %}{% else %}
-        <tr class="empty-row"><td colspan="7">No products yet. Add your first piece.</td></tr>
+        {% endfor %}
+        {% else %}
+        <tr class="empty-row"><td colspan="9">No products yet. <a href="{{ url_for('admin_add_product') }}">Add your first piece →</a></td></tr>
         {% endif %}
       </tbody>
     </table>
   </div>
 </div>
+
+<script>
+let sortMode = false;
+let dragSrc = null;
+
+function toggleSortMode() {
+  sortMode = !sortMode;
+  const btn = document.getElementById('sortBtn');
+  const handles = document.querySelectorAll('.drag-handle');
+  const header = document.getElementById('dragHeader');
+  if (sortMode) {
+    btn.textContent = '✓ Save Order';
+    btn.className = 'btn btn-gold btn-sm';
+    handles.forEach(h => h.style.display = 'table-cell');
+    header.style.display = 'table-cell';
+    initDragDrop();
+  } else {
+    btn.textContent = '⠿ Reorder';
+    btn.className = 'btn btn-outline btn-sm';
+    handles.forEach(h => h.style.display = 'none');
+    header.style.display = 'none';
+    saveOrder();
+  }
+}
+
+function initDragDrop() {
+  const rows = document.querySelectorAll('.product-row');
+  rows.forEach(row => {
+    row.setAttribute('draggable', 'true');
+    row.addEventListener('dragstart', e => { dragSrc = row; row.style.opacity = '.4'; });
+    row.addEventListener('dragend',   e => { row.style.opacity = '1'; });
+    row.addEventListener('dragover',  e => { e.preventDefault(); row.style.background = '#fdf9f3'; });
+    row.addEventListener('dragleave', e => { row.style.background = ''; });
+    row.addEventListener('drop', e => {
+      e.preventDefault();
+      row.style.background = '';
+      if (dragSrc !== row) {
+        const tbody = document.getElementById('productBody');
+        const rows  = [...tbody.querySelectorAll('.product-row')];
+        const srcI  = rows.indexOf(dragSrc);
+        const dstI  = rows.indexOf(row);
+        if (srcI < dstI) tbody.insertBefore(dragSrc, row.nextSibling);
+        else             tbody.insertBefore(dragSrc, row);
+      }
+    });
+  });
+}
+
+async function saveOrder() {
+  const rows  = document.querySelectorAll('.product-row');
+  const order = {};
+  rows.forEach((r, i) => { order[r.dataset.id] = i; });
+  await fetch('/henosis-admin/products/sort', {
+    method: 'POST', headers: {'Content-Type':'application/json'},
+    body: JSON.stringify(order)
+  });
+}
+</script>
 {% endblock %}

@@ -1,0 +1,126 @@
+{% extends "admin/base.html" %}
+{% block page_title %}Order #{{ order.id }}{% endblock %}
+{% block content %}
+<div class="page-actions">
+  <div class="page-title">Order #{{ order.id }}</div>
+  <a href="{{ url_for('admin_orders') }}" class="btn btn-outline">← Back to Orders</a>
+</div>
+
+<div style="display:grid;grid-template-columns:2fr 1fr;gap:20px;align-items:start;">
+  <div style="display:flex;flex-direction:column;gap:16px;">
+
+    <!-- Customer & Shipping -->
+    <div class="card">
+      <div class="card-title">Customer Details</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px;">
+        <div>
+          <div style="font-size:.6rem;letter-spacing:.12em;text-transform:uppercase;color:var(--gray-light);margin-bottom:6px;">Contact</div>
+          <div style="font-weight:500;">{{ order.customer_name }}</div>
+          <div style="font-size:.82rem;color:var(--gray-mid);">{{ order.email }}</div>
+          <div style="font-size:.82rem;color:var(--gray-mid);">{{ order.phone }}</div>
+        </div>
+        <div>
+          <div style="font-size:.6rem;letter-spacing:.12em;text-transform:uppercase;color:var(--gray-light);margin-bottom:6px;">Shipping Address</div>
+          <div style="font-size:.85rem;line-height:1.7;">{{ order.address }}<br>{{ order.city }} — {{ order.pincode }}</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Items -->
+    <div class="card">
+      <div class="card-title">Items Ordered</div>
+      {% set order_items = (order.items or '') if order.items is string else (order['items'] or '') %}{% for item in order_items.split(' | ') %}
+      <div style="padding:10px 0;border-bottom:1px solid var(--beige);font-size:.85rem;">{{ item }}</div>
+      {% endfor %}
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;margin-top:16px;">
+        <div>
+          <div style="font-size:.6rem;letter-spacing:.12em;text-transform:uppercase;color:var(--gray-light);">Subtotal</div>
+          <div style="font-size:.9rem;margin-top:4px;">₹{{ "{:,.0f}".format(order.subtotal|float) }}</div>
+        </div>
+        {% if order.discount_amount|float > 0 %}
+        <div>
+          <div style="font-size:.6rem;letter-spacing:.12em;text-transform:uppercase;color:var(--gray-light);">Discount ({{ order.discount_code }})</div>
+          <div style="font-size:.9rem;color:#2d7a2d;margin-top:4px;">-₹{{ "{:,.0f}".format(order.discount_amount|float) }}</div>
+        </div>
+        {% endif %}
+        <div>
+          <div style="font-size:.6rem;letter-spacing:.12em;text-transform:uppercase;color:var(--gray-light);">Total</div>
+          <div style="font-family:var(--font-display);font-size:1.4rem;color:var(--gold);margin-top:4px;">₹{{ "{:,.0f}".format(order.total|float) }}</div>
+        </div>
+      </div>
+      {% if order.note %}
+      <div style="margin-top:16px;padding:12px;background:var(--cream);border-radius:2px;">
+        <div style="font-size:.6rem;letter-spacing:.12em;text-transform:uppercase;color:var(--gray-light);margin-bottom:4px;">Customer Note</div>
+        <div style="font-size:.82rem;font-style:italic;color:var(--gray-mid);">{{ order.note }}</div>
+      </div>
+      {% endif %}
+    </div>
+
+    <!-- Timeline -->
+    <div class="card">
+      <div class="card-title">Order Timeline</div>
+      {% for event in timeline %}
+      <div style="display:flex;gap:16px;padding:10px 0;border-bottom:1px solid var(--beige);">
+        <div style="width:8px;height:8px;border-radius:50%;background:var(--gold);margin-top:5px;flex-shrink:0;"></div>
+        <div>
+          <div style="font-weight:500;font-size:.85rem;">{{ event.event }}</div>
+          {% if event.note %}<div style="font-size:.78rem;color:var(--gray-mid);">{{ event.note }}</div>{% endif %}
+          <div style="font-size:.68rem;color:var(--gray-light);margin-top:2px;">{{ event.created_at|string|truncate(19,True,'') }}</div>
+        </div>
+      </div>
+      {% else %}
+      <p style="font-size:.82rem;color:var(--gray-light);font-style:italic;">No timeline events.</p>
+      {% endfor %}
+    </div>
+  </div>
+
+  <!-- Update form -->
+  <div class="card" style="position:sticky;top:90px;">
+    <div class="card-title">Update Order</div>
+    <form method="POST" action="{{ url_for('admin_update_order', oid=order.id) }}">
+      <div class="form-group">
+        <label>Order Status</label>
+        <select name="status" style="width:100%;padding:10px;border:1px solid var(--beige);font-family:'Raleway',sans-serif;font-size:.85rem;background:var(--ivory);border-radius:2px;outline:none;">
+          {% for st in ['Pending','Processing','Shipped','Delivered','Cancelled'] %}
+          <option value="{{ st }}" {% if order.status==st %}selected{% endif %}>{{ st }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="form-group">
+        <label>Payment Status</label>
+        <select name="payment_status" style="width:100%;padding:10px;border:1px solid var(--beige);font-family:'Raleway',sans-serif;font-size:.85rem;background:var(--ivory);border-radius:2px;outline:none;">
+          {% for ps in ['Unpaid','Paid','Refunded'] %}
+          <option value="{{ ps }}" {% if order.payment_status==ps %}selected{% endif %}>{{ ps }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="form-group">
+        <label>Tracking Number</label>
+        <input type="text" name="tracking_number" value="{{ order.tracking_number or '' }}" placeholder="e.g. ER123456789IN"/>
+      </div>
+      <div class="form-group">
+        <label>Admin Note</label>
+        <textarea name="admin_note" rows="3" placeholder="Internal notes…">{{ order.admin_note or '' }}</textarea>
+      </div>
+      <button type="submit" class="btn btn-gold btn-full">Update Order</button>
+    </form>
+
+    {% if order.phone %}
+    <div style="margin-top:12px;">
+      <a href="https://wa.me/91{{ order.phone|replace(' ','')|replace('+91','') }}?text=Hi {{ order.customer_name }}, your Henosis order %23{{ order.id }} has been {{ order.status }}."
+         target="_blank" class="btn btn-outline btn-full" style="text-align:center;">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="#25d366"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413z"/></svg>
+        WhatsApp Customer
+      </a>
+    </div>
+    {% endif %}
+
+    <div style="margin-top:8px;">
+      <form method="POST" action="{{ url_for('admin_delete_order', oid=order.id) }}"
+            onsubmit="return confirm('Delete order #{{ order.id }}?')">
+        <button type="submit" class="btn btn-danger btn-full" style="text-align:center;">Delete Order</button>
+      </form>
+    </div>
+  </div>
+</div>
+{% endblock %}
